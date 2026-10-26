@@ -33,8 +33,16 @@ h2{font:700 1.1rem/1.2 var(--body);margin:0}
 .muted{color:var(--muted)}.small{font-size:.86rem}
 p{margin:0}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
-.step{display:flex;align-items:baseline;gap:10px}
-.step .no{font:700 .8rem var(--mono);color:#fff;background:var(--strap);border-radius:4px;padding:1px 7px}
+.step{display:flex;align-items:center;gap:10px}
+.step .no{font:700 .85rem var(--mono);color:#fff;background:var(--sec,var(--strap));border-radius:50%;width:26px;height:26px;display:grid;place-items:center;flex:none}
+/* Abschnitte farbig trennen */
+.sec{--sec:var(--strap);padding-top:0;overflow:hidden;border-top:5px solid var(--sec)}
+.sec .step{margin:0 -16px 2px;padding:11px 16px;background:color-mix(in srgb,var(--sec) 13%,var(--surface));border-bottom:1px solid color-mix(in srgb,var(--sec) 25%,var(--line))}
+.sec .step h2{color:color-mix(in srgb,var(--sec) 70%,var(--fg))}
+.s1{--sec:#0b3266}.s2{--sec:#1d7a46}.s3{--sec:#1f5fa8}.s4{--sec:#d9690f}.s5{--sec:#7a4fb5}
+@media (prefers-color-scheme:dark){.s1{--sec:#7fa8e6}.s2{--sec:#4cc283}.s3{--sec:#6aa1f2}.s4{--sec:#f5953f}.s5{--sec:#b192ea}
+  .step .no{color:#0d1420}}
+.sec .pick button[aria-pressed="true"],.sec .chip[aria-pressed="true"]{--strap:var(--sec)}
 
 /* Kopf */
 .brandbar{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -45,18 +53,25 @@ p{margin:0}
 .infobtn.i{font-style:italic}
 
 /* Ergebnis */
-.result{background:var(--display-bg);color:var(--display-fg);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.result{background:linear-gradient(140deg,#0b2a52 0%,#123f78 100%);color:#eef4fc;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;
+  border:3px solid var(--orange);box-shadow:0 6px 18px rgba(11,42,82,.25);position:relative}
+.result .badge{align-self:flex-start;font:700 .68rem var(--body);letter-spacing:.12em;text-transform:uppercase;background:var(--orange);color:#fff;border-radius:999px;padding:3px 10px}
+.result .ring{width:92px;height:92px;border-radius:50%;border:5px solid var(--orange);display:grid;place-items:center;background:rgba(255,255,255,.06);flex:none}
+.result .ring .big{font-size:2.8rem}
+.result .status{display:inline-flex;align-items:center;gap:6px;font:700 .8rem var(--body);border-radius:999px;padding:3px 10px;margin-top:6px}
+.result .status.ok{background:rgba(76,194,131,.2);color:#8ff0b9}.result .status.bad{background:rgba(255,122,112,.2);color:#ffb0a8}.result .status.warn{background:rgba(246,196,83,.2);color:#f6d58a}
 .result .top{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .result .k{font:600 .68rem var(--body);text-transform:uppercase;letter-spacing:.1em;opacity:.75}
 .result .big{font:700 3rem/1 var(--mono);font-variant-numeric:tabular-nums}
 .result .big small{font:700 1.1rem var(--body);margin-left:6px}
-.strapicons{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;max-width:55%}
+.strapicons{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;max-width:40%}
 .strapicons i{width:10px;height:44px;border-radius:2px;background:repeating-linear-gradient(180deg,#6aa1f2 0 10px,#4f86d6 10px 12px)}
 .dirs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.dirs>div{background:rgba(255,255,255,.07);border-radius:6px;padding:8px}
+.dirs>div{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:8px}
 .dirs .v{font:700 1.25rem var(--mono)}
 .dirs .h{font:500 .72rem var(--mono);opacity:.75}
 .result.invalid .big,.result.invalid .dirs .v{opacity:.45;text-decoration:line-through}
+.result.invalid{border-color:var(--bad)}
 .alt{font-size:.9rem;border-top:1px solid rgba(255,255,255,.15);padding-top:10px}
 .notes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .notes li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;padding:10px 12px;border-radius:6px;background:var(--soft);font-size:.94rem}
@@ -173,7 +188,7 @@ nav button[aria-current="page"]{color:var(--accent);background:var(--soft);box-s
       <div class="result" id="result" aria-live="polite"></div>
       <ul class="notes" id="notes"></ul>
 
-      <div class="panel">
+      <div class="panel sec s1">
         <div class="step"><span class="no">1</span><h2>Ladung</h2></div>
         <div class="row">
           <label class="field">Gewicht, das die Gurte gemeinsam halten (kg)<input type="number" id="mass" class="big-in" inputmode="numeric" min="0" step="10" value="1000"></label>
@@ -189,7 +204,7 @@ nav button[aria-current="page"]{color:var(--accent);background:var(--soft);box-s
         </details>
       </div>
 
-      <div class="panel">
+      <div class="panel sec s2">
         <div class="step"><span class="no">2</span><h2>Reibung</h2></div>
         <p class="qa">Was steht auf dem Boden?</p>
         <div class="pick" id="loadPick"></div>
@@ -208,14 +223,14 @@ nav button[aria-current="page"]{color:var(--accent);background:var(--soft);box-s
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel sec s3">
         <div class="step"><span class="no">3</span><h2>Zurrgurt</h2></div>
         <p class="small muted">STF steht auf dem blauen Etikett, z. B. „S<sub>TF</sub> 350 daN“. Nur mit normaler Handkraft spannen, keine Verlängerung.</p>
         <div class="chips" id="stf"><button class="chip" data-v="250">250</button><button class="chip" data-v="300">300</button><button class="chip" data-v="350">350</button><button class="chip" data-v="400">400</button><button class="chip" data-v="500">500</button><button class="chip" data-v="750">750</button></div>
         <label class="field">STF in daN<input type="number" id="stfIn" inputmode="numeric" min="50" step="10" value="350"></label>
       </div>
 
-      <div class="panel">
+      <div class="panel sec s4">
         <div class="step"><span class="no">4</span><h2>Zurrwinkel</h2></div>
         <div class="angle">
           <svg viewBox="0 0 92 70" aria-hidden="true"><line x1="4" y1="64" x2="88" y2="64" stroke="currentColor" stroke-width="2"/><rect x="8" y="22" width="34" height="42" fill="none" stroke="currentColor" stroke-width="2"/><line id="angLine" x1="42" y1="22" x2="80" y2="64" stroke="#ef7d1a" stroke-width="3"/><text id="angTxt" x="58" y="58" font-size="11" fill="currentColor" font-family="monospace">α</text></svg>
@@ -233,7 +248,7 @@ nav button[aria-current="page"]{color:var(--accent);background:var(--soft);box-s
         </details>
       </div>
 
-      <div class="panel">
+      <div class="panel sec s5">
         <div class="step"><span class="no">5</span><h2>Nach vorne</h2></div>
         <label class="check"><input type="checkbox" id="block"> Ladung steht lückenlos an der Stirnwand</label>
         <div id="blockBox" hidden style="display:flex;flex-direction:column;gap:10px">
@@ -272,7 +287,7 @@ nav button[aria-current="page"]{color:var(--accent);background:var(--soft);box-s
       <div class="panel">
         <h2>Was die Reibung zerstört</h2>
         <ul class="small" style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px">
-          <li><b>Nässe</b> kann den Reibwert deutlich senken, besonders auf Siebdruck und Metall.</li>
+          <li><b>Nässe</b> kann den Reibwert deutlich senken. Ist die Fläche nicht sauber und trocken, darf höchstens mit μ 0,20 gerechnet werden. Das macht der Rechner automatisch.</li>
           <li><b>Sand, Staub, Holzspäne, Folienreste</b> wirken wie Kugellager.</li>
           <li><b>Eis, Schnee, Öl, Fett</b>: Reibung praktisch nicht vorhanden. So nicht losfahren.</li>
           <li><b>Schrumpffolie und Kartonage</b> unter der Palette senken den Reibwert auf den Folienwert.</li>
@@ -325,7 +340,7 @@ nav button[aria-current="page"]{color:var(--accent);background:var(--soft);box-s
   <p class="mail"><a href="mailto:David.Buenger@mail.de">David.Buenger@mail.de</a><button class="btn sm" id="copyMail">Kopieren</button></p>
   <h2 id="infoTitle">Niederzurr-Rechner</h2>
   <p>Berechnung der Zurrgurte beim Niederzurren nach DIN EN 12195-1. Entwickelt von David Bünger, Dozent für Verkehrs- und Fahrpersonalrecht.</p>
-  <p class="small muted">Version 1.2. Hilfsmittel ohne Gewähr. Die Verantwortung für eine ausreichende Ladungssicherung bleibt bei Verlader, Fahrer und Halter. Kippen wird nur als Gefahr erkannt, nicht berechnet. Der Rechner gilt für standfeste Ladung auf ebener Ladefläche.</p>
+  <p class="small muted">Version 1.3. Hilfsmittel ohne Gewähr. Die Verantwortung für eine ausreichende Ladungssicherung bleibt bei Verlader, Fahrer und Halter. Kippen wird nur als Gefahr erkannt, nicht berechnet. Der Rechner gilt für standfeste Ladung auf ebener Ladefläche.</p>
   <p style="font-weight:600">© <span class="year">2026</span> David Bünger. Alle Rechte vorbehalten.</p>
   <div style="display:flex;justify-content:flex-end"><button class="btn primary" id="infoClose">Schließen</button></div>
 </div></div>
@@ -447,7 +462,8 @@ $("muTable").innerHTML=`<thead><tr><th>Ladung</th>${SHORT.map(f=>`<th style="tex
 
 /* ===== Berechnung und Anzeige ===== */
 function calc(){
-  const m=+S.mass||0, mu=muVal(), a=+S.ang||90, stf=+S.stf||0;
+  const muT=muVal(), capped=(S.floor==="wet"||S.floor==="dirty")&&muT>0.2;
+  const m=+S.mass||0, mu=(S.floor==="wet"||S.floor==="dirty")?Math.min(muT,0.2):muT, a=+S.ang||90, stf=+S.stf||0;
   const notes=[];const N=(sev,t)=>notes.push([sev,t]);
   const valid=m>0&&mu>0&&stf>0&&a>0&&a<=90;
   const res={};DIRS.forEach(d=>res[d.k]=valid?nNeeded(m,mu,a,stf,d.c,d.fs):0);
@@ -474,8 +490,8 @@ function calc(){
   if(S.foil&&!S.arm)N("warn","Folie oder Karton unter der Ladung senkt die Reibung. Wenn möglich entfernen oder Antirutschmatte verwenden.");
   // Ladefläche
   if(S.floor==="ice")N("bad","Eis, Schnee, Öl oder Fett: Die Reibwerte gelten nicht. So nicht losfahren. Ladefläche reinigen, dann neu rechnen.");
-  else if(S.floor==="dirty")N("bad","Verschmutzte Ladefläche: Sand, Staub oder Folienreste wirken wie Kugellager. Das Ergebnis gilt erst nach dem Ausfegen.");
-  else if(S.floor==="wet")N("warn","Nässe senkt die Reibung, besonders auf Siebdruck und Metall. Die Tabellenwerte gelten für trockene Flächen. Trocknen oder Antirutschmatten einsetzen.");
+  else if(S.floor==="dirty")N("warn",`Verschmutzte Ladefläche: Sand, Staub oder Späne wirken wie Kugellager. Gerechnet wird deshalb höchstens mit μ 0,20${capped?` statt ${nf(muT)}`:""}. Besser ausfegen, dann neu rechnen – das spart Gurte.`);
+  else if(S.floor==="wet")N("warn",`Nasse Ladefläche: Die Tabellenwerte gelten nur trocken. Gerechnet wird deshalb höchstens mit μ 0,20${capped?` statt ${nf(muT)}`:""}. Trocknen spart Gurte.`);
   // Winkel
   if(a<30)N("bad","Zurrwinkel unter 30°: Niederzurren wirkt kaum noch. Zurrpunkte näher an der Ladung wählen oder anders sichern.");
   else if(a<=45)N("warn",`Flacher Zurrwinkel (${a}°): Viel Vorspannung geht verloren. Steilere Zurrpunkte sparen Gurte.`);
@@ -496,11 +512,13 @@ function calc(){
   if(valid&&mu<0.6&&!S.arm){const r=DIRS.map(d=>(d.k==="fwd"&&fwdBlocked)?0:ceilN(nNeeded(m,0.6,a,stf,d.c,d.fs)));alt=Math.max(2,...r)}
 
   // Ergebnis
-  const invalid=S.floor==="ice"||S.floor==="dirty";
+  const invalid=S.floor==="ice";
   const rEl=$("result");rEl.classList.toggle("invalid",invalid);
   const dirCell=(k,n,raw,blocked)=>`<div><div class="k">${DIRS.find(d=>d.k===k).name}</div><div class="v">${blocked?"Wand":n}</div><div class="h">${blocked?"formschlüssig":raw===0?"Reibung reicht":"rechn. "+nf(raw,2)}</div></div>`;
-  rEl.innerHTML=`<div class="top"><div><div class="k">${invalid?"Ungültig – erst Ladefläche reinigen":"Benötigte Zurrgurte"}</div><div class="big">${valid?need:"–"}<small>${need===1?"Gurt":"Gurte"}</small></div><div class="k" style="margin-top:4px;text-transform:none;letter-spacing:.04em">STF ${n0(stf)} daN · ${a}° · μ ${nf(mu)}</div></div>
-    <div class="strapicons" aria-hidden="true">${valid?"<i></i>".repeat(Math.min(need,12)):""}</div></div>
+  const stCls=invalid||!valid?"bad":(S.floor==="wet"||S.floor==="dirty")?"warn":"ok";
+  const stTxt=invalid?"Ungültig – erst Ladefläche reinigen":!valid?"Eingaben unvollständig":S.floor==="wet"?"Nass: mit μ höchstens 0,20":S.floor==="dirty"?"Verschmutzt: mit μ höchstens 0,20":"Gültig – Ladefläche besenrein";
+  rEl.innerHTML=`<span class="badge">Ergebnis</span><div class="top"><div style="display:flex;gap:14px;align-items:center"><div class="ring"><div class="big">${valid?need:"–"}</div></div><div><div class="k">Benötigte Zurrgurte</div><div style="font:700 1.15rem/1.2 var(--body)">${need===1?"Gurt":"Gurte"} je Ladeeinheit</div><span class="status ${stCls}">${stCls==="ok"?"✓":"!"} ${stTxt}</span></div></div></div>
+    <div class="k" style="text-transform:none;letter-spacing:.04em">Gerechnet mit STF ${n0(stf)} daN · ${a}° · μ ${nf(mu)}</div>
     <div class="dirs">${dirCell("fwd",nf_,res.fwd,fwdBlocked)}${dirCell("side",ns,res.side,false)}${dirCell("rear",nr,res.rear,false)}</div>
     ${alt&&alt<need?`<div class="alt">Mit Antirutschmatte (μ 0,60): <b>${alt} Gurte</b>, also ${need-alt} weniger.</div>`:""}`;
   const ord={bad:0,warn:1,ok:2,tip:3};
@@ -528,7 +546,7 @@ Ergebnis: ${valid?need:"–"} Gurte (mindestens 2)`;
 /* ===== Eingaben verdrahten ===== */
 function syncUI(){
   $("mass").value=S.mass;$("foil").checked=S.foil;$("arm").checked=S.arm;$("muArm").value=S.muArm;$("armWrap").hidden=!S.arm;$("foil").disabled=S.arm;renderPick();$("muSrc").textContent=muInfo().src;
-  $("muShow").textContent="μ "+nf(muVal());$("stfIn").value=S.stf;$("block").checked=S.block;$("blockBox").hidden=!S.block;
+  $("muShow").textContent="μ "+nf(muVal())+((S.floor==="wet"||S.floor==="dirty")&&muVal()>0.2?" → 0,20":"");$("stfIn").value=S.stf;$("block").checked=S.block;$("blockBox").hidden=!S.block;
   $("body").value=S.body;$("payload").value=S.payload;$("H").value=S.H;$("B").value=S.B;$("L").value=S.L;
   const press=(sel,val)=>document.querySelectorAll(sel).forEach(b=>b.setAttribute("aria-pressed",String(String(b.dataset.v)===String(val))));
   press("[data-for=mass] .chip",S.mass);press("#floor .chip",S.floor);press("#stf .chip",S.stf);press("#ang .chip",S.ang);
