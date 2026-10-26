@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Niederzurr-Rechner</title>
+<meta name="theme-color" content="#0b2a52">
+<meta name="description" content="Niederzurren nach DIN EN 12195-1: Anzahl der Zurrgurte schnell berechnen, mit Reibwerten, Hinweisen und Checkliste.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#f0f3f7;--surface:#ffffff;--fg:#14233a;--muted:#5a6678;--line:#d3dae4;--soft:#e7ecf3;
+  --display-bg:#0b2a52;--display-fg:#eef4fc;--brand:#0b3266;--orange:#ef7d1a;--strap:#1f5fa8;
+  --accent:#0b3266;--ok:#1d7a46;--warn:#b06d00;--bad:#b3261e;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --head:"Roboto Condensed","Arial Narrow",system-ui,sans-serif;
+  --mono:ui-monospace,"Roboto Mono",Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0d1420;--surface:#151f2e;--fg:#e6edf6;--muted:#9aa8ba;--line:#2a3648;--soft:#1c2839;
+  --display-bg:#071a33;--display-fg:#e6eefb;--brand:#7fa8e6;--orange:#f5953f;--strap:#6aa1f2;
+  --accent:#7fa8e6;--ok:#4cc283;--warn:#f0b13c;--bad:#ff7a70;color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:16px/1.5 var(--body);-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+main{max-width:720px;margin:0 auto;padding:calc(12px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(92px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px}
+h1{font:700 1.7rem/1.1 var(--head);margin:0}
+h2{font:700 1.1rem/1.2 var(--body);margin:0}
+.muted{color:var(--muted)}.small{font-size:.86rem}
+p{margin:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.step{display:flex;align-items:baseline;gap:10px}
+.step .no{font:700 .8rem var(--mono);color:#fff;background:var(--strap);border-radius:4px;padding:1px 7px}
+
+/* Kopf */
+.brandbar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brandbar .name{font:700 .78rem var(--body);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.brandbar .name b{color:var(--orange)}
+.hbtns{display:flex;gap:8px}
+.infobtn{width:40px;height:40px;border-radius:50%;border:2px solid var(--brand);background:var(--surface);color:var(--brand);font:700 1.15rem Georgia,serif;cursor:pointer}
+.infobtn.i{font-style:italic}
+
+/* Ergebnis */
+.result{background:var(--display-bg);color:var(--display-fg);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.result .top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.result .k{font:600 .68rem var(--body);text-transform:uppercase;letter-spacing:.1em;opacity:.75}
+.result .big{font:700 3rem/1 var(--mono);font-variant-numeric:tabular-nums}
+.result .big small{font:700 1.1rem var(--body);margin-left:6px}
+.strapicons{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;max-width:55%}
+.strapicons i{width:10px;height:44px;border-radius:2px;background:repeating-linear-gradient(180deg,#6aa1f2 0 10px,#4f86d6 10px 12px)}
+.dirs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.dirs>div{background:rgba(255,255,255,.07);border-radius:6px;padding:8px}
+.dirs .v{font:700 1.25rem var(--mono)}
+.dirs .h{font:500 .72rem var(--mono);opacity:.75}
+.result.invalid .big,.result.invalid .dirs .v{opacity:.45;text-decoration:line-through}
+.alt{font-size:.9rem;border-top:1px solid rgba(255,255,255,.15);padding-top:10px}
+.notes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.notes li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;padding:10px 12px;border-radius:6px;background:var(--soft);font-size:.94rem}
+.pill{font:700 .64rem var(--body);text-transform:uppercase;letter-spacing:.08em;padding:3px 8px;border-radius:999px;color:#fff;white-space:nowrap;align-self:start;margin-top:2px}
+.pill.ok{background:var(--ok)}.pill.warn{background:var(--warn)}.pill.bad{background:var(--bad)}.pill.tip{background:var(--strap)}
+
+/* Eingaben */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:600 .95rem var(--body);border:1.5px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:8px 14px;cursor:pointer;font-variant-numeric:tabular-nums}
+.chip[aria-pressed="true"]{background:var(--strap);border-color:var(--strap);color:#fff}
+.seg{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.seg .chip{border-radius:8px;text-align:left;padding:10px 12px;font-size:.9rem}
+.seg .chip[data-v="clean"][aria-pressed="true"]{background:var(--ok);border-color:var(--ok)}
+.seg .chip[data-v="wet"][aria-pressed="true"],.seg .chip[data-v="dirty"][aria-pressed="true"]{background:var(--warn);border-color:var(--warn)}
+.seg .chip[data-v="ice"][aria-pressed="true"]{background:var(--bad);border-color:var(--bad)}
+.row{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:4px;font-size:.86rem;color:var(--muted);flex:1;min-width:120px}
+input[type=number],select{font:inherit;color:var(--fg);background:var(--bg);border:1.5px solid var(--line);border-radius:6px;padding:10px;width:100%;min-width:0;font-variant-numeric:tabular-nums}
+.big-in{font:700 1.3rem var(--mono)!important}
+.mu{font:700 1.4rem var(--mono);color:var(--strap);white-space:nowrap}
+.check{display:flex;gap:10px;align-items:center;cursor:pointer}
+.check input{width:20px;height:20px;accent-color:var(--strap);flex:none}
+details.more summary{cursor:pointer;font-weight:600;color:var(--strap)}
+details.more[open] summary{margin-bottom:10px}
+.angle{display:flex;gap:14px;align-items:center}
+.angle svg{width:92px;height:70px;flex:none}
+:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+
+/* Winkelmesser */
+.measbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;font:700 1.05rem var(--body);background:var(--orange);color:#fff;border:0;border-radius:10px;padding:14px;cursor:pointer}
+.measbtn svg{width:26px;height:26px}
+.gauge{display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--display-bg);color:var(--display-fg);border-radius:12px;padding:18px}
+.gauge svg{width:100%;max-width:300px;height:auto}
+.gauge .deg{font:700 4rem/1 var(--mono);font-variant-numeric:tabular-nums}
+.gauge .st{font:600 .85rem var(--body);min-height:1.3em;text-align:center}
+.gauge .st.ok{color:#7ee0a8}.gauge .st.warn{color:#f6c453}
+.howto{display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px;align-items:center}
+.howto svg{width:96px;height:74px}
+
+/* Tabellen */
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th{font:600 .7rem var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:left;padding:6px;border-bottom:1.5px solid var(--line)}
+td{padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+td.n{font:700 .95rem var(--mono);text-align:right;white-space:nowrap}
+.grp td{font-weight:700;background:var(--soft)}
+.calc{font:500 .78rem var(--mono);background:var(--soft);border-radius:6px;padding:10px;overflow-x:auto;white-space:pre}
+
+/* Checkliste */
+.cl{display:flex;flex-direction:column}
+.cl label{display:flex;gap:12px;align-items:flex-start;padding:10px 2px;border-top:1px solid var(--line);cursor:pointer}
+.cl label:first-child{border-top:0}
+.cl input{width:22px;height:22px;accent-color:var(--ok);flex:none;margin-top:1px}
+.cl input:checked+span{color:var(--muted);text-decoration:line-through}
+
+/* Navigation */
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;z-index:5;
+  padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+nav div{display:grid;grid-template-columns:repeat(3,1fr);width:100%;max-width:720px}
+nav button{background:none;border:0;color:var(--muted);font:600 .8rem var(--body);padding:8px 4px;border-radius:8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button svg{width:24px;height:24px}
+nav button[aria-current="page"]{color:var(--accent);background:var(--soft);box-shadow:inset 0 -3px 0 var(--orange)}
+
+/* Blätter */
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center;z-index:10}
+.sheet .card{background:var(--surface);width:100%;max-width:560px;border-radius:14px 14px 0 0;padding:18px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:12px;max-height:90vh;overflow:auto}
+.info-logo{background:#fff;border-radius:10px;padding:10px;line-height:0}.info-logo img{width:100%;height:auto}
+.mail{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;font-weight:600}
+.mail a{color:var(--brand);text-decoration:none}
+.btn{font:600 .95rem var(--body);border:1.5px solid var(--line);background:var(--surface);color:var(--fg);border-radius:6px;padding:9px 14px;cursor:pointer}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+@media (prefers-color-scheme:dark){.btn.primary{color:#0d1420}}
+.btn.sm{font-size:.8rem;padding:4px 9px}
+.help details{border-top:1px solid var(--line);padding:4px 0}
+.help summary{font-weight:700;padding:10px 0;cursor:pointer;list-style-position:inside}
+.help p,.help ul,.help ol{margin:0 0 10px;font-size:.95rem}.help ul,.help ol{padding-left:20px}
+.toast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:999px;font-weight:600;z-index:20}
+.copy{font-size:.8rem;color:var(--muted);text-align:center}
+
+/* Startbildschirm */
+#splash{position:fixed;inset:0;background:#fff;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;transition:opacity .45s ease}
+#splash img{width:min(88vw,460px);height:auto;animation:pop .7s ease-out both}
+#splash .t{font:700 1.15rem var(--body);color:#0b3266}
+#splash .sm{font:600 .92rem var(--body);color:#0b3266}
+#splash .bar{width:min(60vw,240px);height:4px;background:#e7ecf3;border-radius:2px;overflow:hidden}
+#splash .bar i{display:block;height:100%;background:#ef7d1a;transform-origin:left;animation:load 2s linear both}
+#splash.out{opacity:0;pointer-events:none}
+@keyframes pop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+@keyframes load{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){#splash img,#splash .bar i{animation:none}#splash{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <header class="brandbar">
+    <span class="name">Nieder<b>zurren</b></span>
+    <span class="hbtns"><button class="infobtn" id="helpBtn" aria-label="Hilfe">?</button><button class="infobtn i" id="infoBtn" aria-label="Info und Kontakt">i</button></span>
+  </header>
+
+  <!-- RECHNER -->
+  <section id="v-calc">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="result" id="result" aria-live="polite"></div>
+      <ul class="notes" id="notes"></ul>
+
+      <div class="panel">
+        <div class="step"><span class="no">1</span><h2>Ladung</h2></div>
+        <div class="row">
+          <label class="field">Gewicht, das die Gurte gemeinsam halten (kg)<input type="number" id="mass" class="big-in" inputmode="numeric" min="0" step="10" value="1000"></label>
+        </div>
+        <div class="chips" data-for="mass"><button class="chip" data-v="500">500</button><button class="chip" data-v="750">750</button><button class="chip" data-v="1000">1.000</button><button class="chip" data-v="1500">1.500</button><button class="chip" data-v="2000">2.000</button><button class="chip" data-v="3000">3.000</button></div>
+        <details class="more" id="dimsBox"><summary>Maße für die Kipp-Prüfung</summary>
+          <div class="row">
+            <label class="field">Höhe (cm)<input type="number" id="H" inputmode="numeric" min="0" placeholder="z. B. 180"></label>
+            <label class="field">Breite (cm)<input type="number" id="B" inputmode="numeric" min="0" placeholder="z. B. 80"></label>
+            <label class="field">Länge (cm)<input type="number" id="L" inputmode="numeric" min="0" placeholder="z. B. 120"></label>
+          </div>
+          <p class="small muted">Breite = quer zur Fahrtrichtung, Länge = in Fahrtrichtung. Die Prüfung geht vom Schwerpunkt in der Mitte aus.</p>
+        </details>
+      </div>
+
+      <div class="panel">
+        <div class="step"><span class="no">2</span><h2>Reibung</h2></div>
+        <div class="row" style="align-items:center">
+          <label class="field" style="flex:4">Ladung auf Ladefläche<select id="pair"></select></label>
+          <span class="mu" id="muShow">μ 0,45</span>
+        </div>
+        <label class="field" id="customWrap" hidden>Eigener Reibbeiwert μ (laut Zertifikat)<input type="number" id="muCustom" inputmode="decimal" min="0.05" max="1.2" step="0.01" value="0.6"></label>
+        <p class="small muted" style="margin-top:-2px">Zustand der Ladefläche</p>
+        <div class="seg" id="floor">
+          <button class="chip" data-v="clean">Besenrein und trocken</button>
+          <button class="chip" data-v="wet">Nass oder feucht</button>
+          <button class="chip" data-v="dirty">Verschmutzt: Sand, Staub, Folie</button>
+          <button class="chip" data-v="ice">Eis, Schnee, Öl, Fett</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="step"><span class="no">3</span><h2>Zurrgurt</h2></div>
+        <p class="small muted">STF steht auf dem blauen Etikett, z. B. „S<sub>TF</sub> 350 daN“. Nur mit normaler Handkraft spannen, keine Verlängerung.</p>
+        <div class="chips" id="stf"><button class="chip" data-v="250">250</button><button class="chip" data-v="300">300</button><button class="chip" data-v="350">350</button><button class="chip" data-v="400">400</button><button class="chip" data-v="500">500</button><button class="chip" data-v="750">750</button></div>
+        <label class="field">STF in daN<input type="number" id="stfIn" inputmode="numeric" min="50" step="10" value="350"></label>
+      </div>
+
+      <div class="panel">
+        <div class="step"><span class="no">4</span><h2>Zurrwinkel</h2></div>
+        <div class="angle">
+          <svg viewBox="0 0 92 70" aria-hidden="true"><line x1="4" y1="64" x2="88" y2="64" stroke="currentColor" stroke-width="2"/><rect x="8" y="22" width="34" height="42" fill="none" stroke="currentColor" stroke-width="2"/><line id="angLine" x1="42" y1="22" x2="80" y2="64" stroke="#ef7d1a" stroke-width="3"/><text id="angTxt" x="58" y="58" font-size="11" fill="currentColor" font-family="monospace">α</text></svg>
+          <p class="small muted">Winkel zwischen Gurt und Ladefläche, von der Seite gesehen. Je steiler, desto besser.</p>
+        </div>
+        <button class="measbtn" id="measOpen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M3 20 21 9" stroke-dasharray="2 2"/></svg>Mit dem Handy messen</button>
+        <p class="small muted" style="text-align:center;margin-top:-4px">oder schätzen:</p>
+        <div class="chips" id="ang"><button class="chip" data-v="90">90°</button><button class="chip" data-v="80">80°</button><button class="chip" data-v="70">70°</button><button class="chip" data-v="60">60°</button><button class="chip" data-v="45">45°</button><button class="chip" data-v="30">30°</button></div>
+        <details class="more"><summary>Winkel mit Zollstock ausmessen</summary>
+          <div class="row">
+            <label class="field">Höhe der Ladungskante über dem Zurrpunkt (cm)<input type="number" id="mh" inputmode="numeric" min="0" placeholder="z. B. 150"></label>
+            <label class="field">Waagerechter Abstand Zurrpunkt bis Ladung (cm)<input type="number" id="ma" inputmode="numeric" min="0" placeholder="z. B. 20"></label>
+          </div>
+          <p class="small muted" id="measOut">Beide Werte eintragen, dann wird der Winkel übernommen.</p>
+        </details>
+      </div>
+
+      <div class="panel">
+        <div class="step"><span class="no">5</span><h2>Nach vorne</h2></div>
+        <label class="check"><input type="checkbox" id="block"> Ladung steht lückenlos an der Stirnwand</label>
+        <div id="blockBox" hidden style="display:flex;flex-direction:column;gap:10px">
+          <div class="row">
+            <label class="field">Aufbau<select id="body"><option value="L">Standard / Code L</option><option value="XL">Code XL</option></select></label>
+            <label class="field">Nutzlast des Fahrzeugs (kg)<input type="number" id="payload" inputmode="numeric" min="0" step="100" placeholder="z. B. 24000"></label>
+          </div>
+          <p class="small muted">Belastbarkeit der Stirnwand nach DIN EN 12642: Code L 40 % der Nutzlast, höchstens 5.000 daN. Code XL 50 % der Nutzlast.</p>
+        </div>
+      </div>
+
+      <details class="panel more"><summary>Rechenweg anzeigen</summary><div class="calc" id="calc"></div></details>
+      <div class="btns" style="display:flex;justify-content:center"><button class="btn" id="reset">Alles zurücksetzen</button></div>
+    </div>
+  </section>
+
+  <!-- REIBWERTE -->
+  <section id="v-mu" hidden>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <h1>Reibwerte</h1>
+      <div class="panel">
+        <p class="small muted">Gleitreibbeiwerte μ nach DIN EN 12195-1, Anhang B. Sie gelten nur für saubere, trockene, besenreine Flächen ohne Eis, Schnee, Öl oder Fett.</p>
+        <div style="overflow-x:auto"><table><thead><tr><th>Ladung auf …</th><th style="text-align:right;text-transform:none">μ</th></tr></thead><tbody id="muTable"></tbody></table></div>
+      </div>
+      <div class="panel">
+        <h2>Antirutschmatten richtig einsetzen</h2>
+        <ul class="small" style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px">
+          <li>Nur den Wert aus dem Zertifikat des Herstellers verwenden. Ohne Nachweis gilt die Tabelle für Gummimatten.</li>
+          <li>Die Ladung muss vollständig auf der Matte stehen, nirgends daneben auf dem Boden.</li>
+          <li>Matte und beide Kontaktflächen sauber, trocken, fettfrei. Beschädigte oder verölte Matten aussortieren.</li>
+          <li>Die Matte ersetzt keine Zurrgurte, sie verringert nur ihre Anzahl.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h2>Was die Reibung zerstört</h2>
+        <ul class="small" style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px">
+          <li><b>Nässe</b> kann den Reibwert deutlich senken, besonders auf Siebdruck und Metall.</li>
+          <li><b>Sand, Staub, Holzspäne, Folienreste</b> wirken wie Kugellager.</li>
+          <li><b>Eis, Schnee, Öl, Fett</b>: Reibung praktisch nicht vorhanden. So nicht losfahren.</li>
+          <li><b>Schrumpffolie und Kartonage</b> unter der Palette senken den Reibwert auf den Folienwert.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHECKLISTE -->
+  <section id="v-check" hidden>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h1>Checkliste</h1><button class="btn sm" id="clReset">Neu beginnen</button></div>
+      <div class="panel"><h2>Lastverteilung vor dem Beladen</h2><div class="cl" data-cl="a">
+        <label><input type="checkbox"><span>Lastverteilungsplan des Fahrzeugs beachtet: Wo darf der Schwerpunkt bei diesem Gewicht liegen?</span></label>
+        <label><input type="checkbox"><span>Schwere Ladung unten, leichte oben. Schwerpunkt möglichst niedrig.</span></label>
+        <label><input type="checkbox"><span>Schwerpunkt auf der Längsmittellinie, nicht einseitig links oder rechts.</span></label>
+        <label><input type="checkbox"><span>Bei Teilladung: Achslasten trotzdem prüfen. Auch unter dem zulässigen Gesamtgewicht kann eine Achse überladen sein.</span></label>
+        <label><input type="checkbox"><span>Mindestlast auf der Lenkachse eingehalten (Herstellerangabe), sonst schlechtes Lenk- und Bremsverhalten.</span></label>
+        <label><input type="checkbox"><span>Beim Teilentladen an die Lastverteilung danach denken: Restladung nach vorn umsetzen, wenn nötig.</span></label>
+      </div></div>
+      <div class="panel"><h2>Beim Zurren</h2><div class="cl" data-cl="b">
+        <label><input type="checkbox"><span>Ladefläche besenrein und trocken, frei von Eis, Schnee, Öl.</span></label>
+        <label><input type="checkbox"><span>Gurte geprüft: Etikett lesbar, keine Schnitte, Nähte heil, Ratsche in Ordnung.</span></label>
+        <label><input type="checkbox"><span>Mindestens zwei Gurte je Ladeeinheit oder Reihe, damit sich nichts verdreht.</span></label>
+        <label><input type="checkbox"><span>Kantenschutz an scharfen Kanten, damit Gurt und Ladung heil bleiben und die Vorspannung auf beide Seiten wirkt.</span></label>
+        <label><input type="checkbox"><span>Gurte nicht verdreht, nicht geknotet, Ratsche nicht auf der Kante.</span></label>
+        <label><input type="checkbox"><span>Nur mit normaler Handkraft gespannt, keine Verlängerung an der Ratsche.</span></label>
+        <label><input type="checkbox"><span>Zurrwinkel möglichst steil, Zurrpunkte nah an der Ladung gewählt.</span></label>
+      </div></div>
+      <div class="panel"><h2>Vor der Abfahrt und unterwegs</h2><div class="cl" data-cl="c">
+        <label><input type="checkbox"><span>Lücken zur Stirnwand und zwischen den Ladeeinheiten geschlossen oder gesondert gesichert.</span></label>
+        <label><input type="checkbox"><span>Türen, Bordwände und Planen geschlossen und verriegelt.</span></label>
+        <label><input type="checkbox"><span>Nach kurzer Fahrt anhalten und nachspannen. Ladung setzt sich, Gurte verlieren Vorspannung.</span></label>
+        <label><input type="checkbox"><span>Nach starkem Bremsen, schlechten Strecken und nach jedem Teilentladen erneut prüfen.</span></label>
+      </div></div>
+    </div>
+  </section>
+
+  <p class="copy">Niederzurr-Rechner · © <span class="year">2026</span> David Bünger</p>
+</main>
+
+<nav><div>
+  <button data-view="calc" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M8 18h2M12 18h4M16 15v3"/></svg>Rechner</button>
+  <button data-view="mu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18h18M6 18V9h9v9M15 13l5-2"/></svg>Reibwerte</button>
+  <button data-view="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6h11M9 12h11M9 18h11M3.5 6l1.5 1.5L7.5 5M3.5 12l1.5 1.5 2.5-2.5M3.5 18l1.5 1.5 2.5-2.5"/></svg>Checkliste</button>
+</div></nav>
+
+<div class="sheet" id="info" hidden><div class="card" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+  <div class="info-logo"><img src="logo-full.png" alt="David Bünger – Dozent für Verkehrs- und Fahrpersonalrecht" width="1000" height="583"></div>
+  <p class="mail"><a href="mailto:David.Buenger@mail.de">David.Buenger@mail.de</a><button class="btn sm" id="copyMail">Kopieren</button></p>
+  <h2 id="infoTitle">Niederzurr-Rechner</h2>
+  <p>Berechnung der Zurrgurte beim Niederzurren nach DIN EN 12195-1. Entwickelt von David Bünger, Dozent für Verkehrs- und Fahrpersonalrecht.</p>
+  <p class="small muted">Version 1.1. Hilfsmittel ohne Gewähr. Die Verantwortung für eine ausreichende Ladungssicherung bleibt bei Verlader, Fahrer und Halter. Kippen wird nur als Gefahr erkannt, nicht berechnet. Der Rechner gilt für standfeste Ladung auf ebener Ladefläche.</p>
+  <p style="font-weight:600">© <span class="year">2026</span> David Bünger. Alle Rechte vorbehalten.</p>
+  <div style="display:flex;justify-content:flex-end"><button class="btn primary" id="infoClose">Schließen</button></div>
+</div></div>
+
+<div class="sheet" id="help" hidden><div class="card help" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <div style="display:flex;justify-content:space-between;align-items:center"><h2 id="helpTitle">Hilfe</h2><button class="btn" id="helpClose">Schließen</button></div>
+  <details open><summary>In fünf Schritten zum Ergebnis</summary>
+    <ol><li><b>Gewicht</b> der Ladung eintragen, die von denselben Gurten gehalten wird, zum Beispiel eine Palette oder eine Reihe.</li>
+    <li><b>Reibpaarung</b> wählen: Was steht worauf? Mit Antirutschmatte die Matte wählen.</li>
+    <li><b>Zustand der Ladefläche</b> antippen. Nur „besenrein und trocken“ ergibt ein gültiges Ergebnis.</li>
+    <li><b>STF</b> vom Gurtetikett antippen.</li>
+    <li><b>Winkel</b> mit dem Handy messen, schätzen oder mit dem Zollstock ausmessen.</li></ol>
+    <p>Oben steht sofort, wie viele Gurte nötig sind, aufgeteilt nach vorne, seitlich und hinten. Der größte Wert zählt.</p></details>
+  <details><summary>Winkel mit dem Handy messen</summary>
+    <ol><li>Gurt spannen.</li>
+    <li>Auf „Mit dem Handy messen“ tippen.</li>
+    <li>Handy mit dem Rücken auf den Gurt legen, die lange Seite zeigt in Gurtrichtung, also von der Ladungskante zum Zurrpunkt.</li>
+    <li>Ruhig halten, bis „stabil“ erscheint, dann „Winkel übernehmen“.</li></ol>
+    <p>Steht das Fahrzeug schräg, vorher das Handy flach auf die Ladefläche legen und „Ladefläche nullen“ tippen. Am iPhone fragt Safari einmal nach Zugriff auf den Bewegungssensor.</p></details>
+  <details><summary>Was bedeutet „lückenlos an der Stirnwand“?</summary>
+    <p>Steht die Ladung ohne Lücke an einer tragfähigen Stirnwand, übernimmt die Wand die Sicherung nach vorne. Dann zählen nur noch seitlich und hinten. Mit der Nutzlast prüft der Rechner, ob die Stirnwand die Kraft aufnehmen kann.</p></details>
+  <details><summary>Warum steht da „Antirutschmatte“ als Tipp?</summary>
+    <p>Der Rechner zeigt immer, wie viele Gurte mit Antirutschmatte nötig wären. Oft spart die Matte mehrere Gurte.</p></details>
+  <details><summary>Kipp-Prüfung</summary>
+    <p>Trag unter „Maße für die Kipp-Prüfung“ Höhe, Breite und Länge ein. Ist die Ladung schmal und hoch, warnt der Rechner. Dann reicht die Berechnung auf Rutschen nicht aus, und die Ladung braucht zusätzliche Sicherung gegen Kippen.</p></details>
+  <details><summary>Rechenweg</summary>
+    <p>Unter „Rechenweg anzeigen“ steht die Formel mit deinen Zahlen. Gut zum Nachvollziehen im Unterricht.</p></details>
+  <details><summary>Checkliste</summary>
+    <p>Die Checkliste führt durch Lastverteilung, Zurren und Abfahrt. Mit „Neu beginnen“ setzt du alle Haken zurück.</p></details>
+  <p class="small muted">Alle Eingaben bleiben nur auf diesem Handy gespeichert. Die App funktioniert auch ohne Internet.</p>
+</div></div>
+
+<div class="sheet" id="meas" hidden><div class="card" role="dialog" aria-modal="true" aria-labelledby="measTitle">
+  <div style="display:flex;justify-content:space-between;align-items:center"><h2 id="measTitle">Zurrwinkel messen</h2><button class="btn" id="measClose">Abbrechen</button></div>
+  <div class="howto">
+    <svg viewBox="0 0 96 74" aria-hidden="true"><line x1="2" y1="70" x2="94" y2="70" stroke="currentColor" stroke-width="2"/><rect x="6" y="20" width="34" height="50" fill="none" stroke="currentColor" stroke-width="2"/><line x1="40" y1="20" x2="84" y2="70" stroke="#6aa1f2" stroke-width="4"/><rect x="50" y="22" width="9" height="24" rx="2" transform="rotate(-41 54 34)" fill="#ef7d1a"/></svg>
+    <p class="small">Leg das Handy <b>mit dem Rücken auf den gespannten Gurt</b>, die lange Seite in Gurtrichtung. Ruhig halten, bis „stabil“ erscheint, dann übernehmen.</p>
+  </div>
+  <div class="gauge">
+    <svg viewBox="0 0 125 112" aria-hidden="true" style="max-width:220px">
+      <path d="M10 100 A90 90 0 0 1 22.06 55" fill="none" stroke="#ff8f85" stroke-width="14"/><path d="M22.06 55 A90 90 0 0 1 36.4 36.4" fill="none" stroke="#f6c453" stroke-width="14"/><path d="M36.4 36.4 A90 90 0 0 1 100 10" fill="none" stroke="#7ee0a8" stroke-width="14" opacity=".85"/>
+      <line id="needle" x1="100" y1="100" x2="190" y2="100" stroke="#fff" stroke-width="4" stroke-linecap="round"/><circle cx="100" cy="100" r="6" fill="#fff"/>
+      <text x="6" y="108" font-size="9" fill="currentColor">0°</text><text x="14" y="34" font-size="9" fill="currentColor">45°</text><text x="108" y="14" font-size="9" fill="currentColor">90°</text></svg>
+    <div class="deg" id="measDeg">–</div>
+    <div class="st" id="measSt">Warte auf den Neigungssensor …</div>
+  </div>
+  <p class="small muted" id="measCal"></p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between">
+    <button class="btn sm" id="measZero">Ladefläche nullen</button>
+    <button class="btn primary" id="measTake" disabled>Winkel übernehmen</button>
+  </div>
+  <p class="small muted">Steht das Fahrzeug schräg? Leg das Handy erst flach auf die Ladefläche und tippe auf „Ladefläche nullen“. Dann misst die App relativ zur Ladefläche.</p>
+</div></div>
+
+<div id="splash" role="img" aria-label="David Bünger – Niederzurr-Rechner">
+  <img src="logo-full.png" alt="" width="1000" height="583">
+  <span class="t">Niederzurr-Rechner</span>
+  <span class="sm">David.Buenger@mail.de</span>
+  <span class="bar"><i></i></span>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+"use strict";
+/* ===== Reibwerte nach DIN EN 12195-1, Anhang B ===== */
+const MU=[
+ ["Schnittholz / Holzpalette",[["sw-ply","auf Schichtholz, Sperrholz, Siebdruck",0.45],["sw-alu","auf geriffeltem Aluminium",0.40],["sw-steel","auf Stahlblech",0.30],["sw-foil","auf Schrumpffolie",0.30]]],
+ ["Gehobeltes Holz",[["pw-ply","auf Schichtholz, Sperrholz, Siebdruck",0.30],["pw-alu","auf geriffeltem Aluminium",0.25],["pw-steel","auf Stahlblech",0.20]]],
+ ["Kunststoffpalette",[["pl-ply","auf Schichtholz, Sperrholz, Siebdruck",0.20],["pl-alu","auf geriffeltem Aluminium",0.15],["pl-steel","auf Stahlblech",0.15]]],
+ ["Stahlkiste / Metall",[["st-ply","auf Schichtholz, Sperrholz, Siebdruck",0.45],["st-alu","auf geriffeltem Aluminium",0.30],["st-steel","auf Stahlblech",0.20]]],
+ ["Beton",[["co-rough","rau auf Holzlatten",0.70],["co-smooth","glatt auf Holzlatten",0.55]]],
+ ["Antirutschmaterial",[["arm","Gummimatte (ohne Zertifikat)",0.60],["custom","Eigener Wert laut Zertifikat",null]]]
+];
+const MUMAP={};MU.forEach(([g,l])=>l.forEach(([id,t,v])=>MUMAP[id]={g,t,v}));
+
+/* ===== Norm-Konstanten DIN EN 12195-1 (Straße) ===== */
+const DIRS=[{k:"fwd",name:"nach vorne",c:0.8,fs:1.25},{k:"side",name:"seitlich",c:0.5,fs:1.1},{k:"rear",name:"nach hinten",c:0.5,fs:1.1}];
+const G=9.81, CZ=1.0;
+
+/* Benötigte Anzahl Niederzurrungen gegen Rutschen:
+   n ≥ m·g·(c − μ·cz)·fs / (2·μ·sin α·FT)   (m in kg, FT in daN → ×10 N) */
+function nNeeded(m,mu,alpha,stf,c,fs){const net=c-mu*CZ;if(net<=0||m<=0)return 0;return (m*G*net*fs)/(2*mu*Math.sin(alpha*Math.PI/180)*stf*10)}
+
+/* ===== Zustand ===== */
+const DEF={mass:1000,pair:"sw-ply",muCustom:0.6,floor:"clean",stf:350,ang:90,block:false,body:"L",payload:"",H:"",B:"",L:""};
+let S={...DEF};
+try{const s=JSON.parse(localStorage.getItem("niederzurren-v1")||"null");if(s)S={...DEF,...s}}catch(e){}
+const save=()=>{try{localStorage.setItem("niederzurren-v1",JSON.stringify(S))}catch(e){}};
+const $=id=>document.getElementById(id);
+const nf=(x,d=2)=>x.toLocaleString("de-DE",{minimumFractionDigits:d,maximumFractionDigits:d});
+const n0=x=>Math.round(x).toLocaleString("de-DE");
+function toast(m){const t=$("toast");t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2000)}
+
+/* ===== Auswahl füllen ===== */
+$("pair").innerHTML=MU.map(([g,l])=>`<optgroup label="${g}">${l.map(([id,t,v])=>`<option value="${id}">${g} ${t}${v?` (μ ${nf(v)})`:""}</option>`).join("")}</optgroup>`).join("");
+$("muTable").innerHTML=MU.map(([g,l])=>`<tr class="grp"><td colspan="2">${g}</td></tr>`+l.filter(x=>x[2]).map(([id,t,v])=>`<tr><td>${t}</td><td class="n">${nf(v)}</td></tr>`).join("")).join("");
+
+function muVal(){return S.pair==="custom"?(+S.muCustom||0):MUMAP[S.pair].v}
+
+/* ===== Berechnung und Anzeige ===== */
+function calc(){
+  const m=+S.mass||0, mu=muVal(), a=+S.ang||90, stf=+S.stf||0;
+  const notes=[];const N=(sev,t)=>notes.push([sev,t]);
+  const valid=m>0&&mu>0&&stf>0&&a>0&&a<=90;
+  const res={};DIRS.forEach(d=>res[d.k]=valid?nNeeded(m,mu,a,stf,d.c,d.fs):0);
+
+  // Stirnwand
+  let fwdBlocked=false, wallInfo="";
+  const restF=m*G*Math.max(0,0.8-mu)/10; // daN Restkraft nach vorne nach Reibung
+  if(S.block){
+    const P=+S.payload||0;
+    if(P>0){const cap=S.body==="XL"?0.5*P*G/10:Math.min(0.4*P*G/10,5000);
+      wallInfo=`Stirnwand ${S.body==="XL"?"Code XL":"Code L"}: belastbar bis ${n0(cap)} daN, benötigt ${n0(restF)} daN.`;
+      if(restF<=cap){fwdBlocked=true;N("ok",`Nach vorne über die Stirnwand gesichert. ${wallInfo}`)}
+      else N("bad",`Die Stirnwand reicht nicht. ${wallInfo} Nach vorne zusätzlich zurren oder Ladung umverteilen.`)}
+    else{fwdBlocked=true;N("warn",`Nach vorne über die Stirnwand gerechnet. Trag die Nutzlast ein, dann prüft der Rechner, ob die Stirnwand die ${n0(restF)} daN aufnehmen kann.`)}
+  }
+  const ceilN=x=>Math.ceil(x-1e-9);
+  const nf_=fwdBlocked?0:ceilN(res.fwd), ns=ceilN(res.side), nr=ceilN(res.rear);
+  let need=Math.max(nf_,ns,nr);
+  const minApplied=valid&&need<2;
+  if(valid)need=Math.max(need,2);
+
+  // Ladefläche
+  if(S.floor==="ice")N("bad","Eis, Schnee, Öl oder Fett: Die Reibwerte gelten nicht. So nicht losfahren. Ladefläche reinigen, dann neu rechnen.");
+  else if(S.floor==="dirty")N("bad","Verschmutzte Ladefläche: Sand, Staub oder Folienreste wirken wie Kugellager. Das Ergebnis gilt erst nach dem Ausfegen.");
+  else if(S.floor==="wet")N("warn","Nässe senkt die Reibung, besonders auf Siebdruck und Metall. Die Tabellenwerte gelten für trockene Flächen. Trocknen oder Antirutschmatten einsetzen.");
+  // Winkel
+  if(a<30)N("bad","Zurrwinkel unter 30°: Niederzurren wirkt kaum noch. Zurrpunkte näher an der Ladung wählen oder anders sichern.");
+  else if(a<=45)N("warn",`Flacher Zurrwinkel (${a}°): Viel Vorspannung geht verloren. Steilere Zurrpunkte sparen Gurte.`);
+  // Viele Gurte
+  if(valid&&need>6)N("warn",`${need} Gurte sind viel. Niederzurren ist hier unwirtschaftlich. Besser formschlüssig laden, Antirutschmatten verwenden oder direkt zurren.`);
+  if(minApplied)N("tip","Rechnerisch reicht die Reibung fast allein. Trotzdem immer mindestens zwei Gurte, damit sich die Ladung nicht verdreht oder wandert.");
+  // Kippen
+  const H=+S.H||0,B=+S.B||0,L=+S.L||0;
+  if(H&&B&&H/B>1/0.6)N("bad",`Kippgefahr zur Seite: Die Ladung ist ${nf(H/B,1)}-mal so hoch wie breit. Niederzurren gegen Rutschen reicht nicht. Zusätzlich gegen Kippen sichern, zum Beispiel formschlüssig oder durch Zusammenfassen mit anderer Ladung.`);
+  else if(H&&B&&H/B>1/0.6*0.85)N("warn","Die Ladung ist zur Seite fast kippgefährdet. Sorgfältig prüfen, ob der Schwerpunkt wirklich mittig liegt.");
+  if(H&&L&&H/L>1/0.8&&!fwdBlocked)N("bad",`Kippgefahr nach vorne: Höhe zu Länge ${nf(H/L,1)}. Ladung nach vorne formschlüssig sichern.`);
+  if(valid&&mu>=0.5&&mu<0.8)N("tip","Nach vorne trägt die Reibung schon viel. Steht die Ladung an der Stirnwand, reichen oft wenige Gurte.");
+  // Kantenschutz / Nachspannen
+  N("tip","Kantenschutz verwenden: Er schützt den Gurt und sorgt dafür, dass die Vorspannung auch auf der Gegenseite ankommt. Davon geht die Norm aus.");
+
+  // Alternative mit Antirutschmatte
+  let alt="";
+  if(valid&&mu<0.6&&S.pair!=="custom"){const r=DIRS.map(d=>(d.k==="fwd"&&fwdBlocked)?0:ceilN(nNeeded(m,0.6,a,stf,d.c,d.fs)));alt=Math.max(2,...r)}
+
+  // Ergebnis
+  const invalid=S.floor==="ice"||S.floor==="dirty";
+  const rEl=$("result");rEl.classList.toggle("invalid",invalid);
+  const dirCell=(k,n,raw,blocked)=>`<div><div class="k">${DIRS.find(d=>d.k===k).name}</div><div class="v">${blocked?"Wand":n}</div><div class="h">${blocked?"formschlüssig":raw===0?"Reibung reicht":"rechn. "+nf(raw,2)}</div></div>`;
+  rEl.innerHTML=`<div class="top"><div><div class="k">${invalid?"Ungültig – erst Ladefläche reinigen":"Benötigte Zurrgurte"}</div><div class="big">${valid?need:"–"}<small>${need===1?"Gurt":"Gurte"}</small></div><div class="k" style="margin-top:4px;text-transform:none;letter-spacing:.04em">STF ${n0(stf)} daN · ${a}° · μ ${nf(mu)}</div></div>
+    <div class="strapicons" aria-hidden="true">${valid?"<i></i>".repeat(Math.min(need,12)):""}</div></div>
+    <div class="dirs">${dirCell("fwd",nf_,res.fwd,fwdBlocked)}${dirCell("side",ns,res.side,false)}${dirCell("rear",nr,res.rear,false)}</div>
+    ${alt&&alt<need?`<div class="alt">Mit Antirutschmatte (μ 0,60): <b>${alt} Gurte</b>, also ${need-alt} weniger.</div>`:""}`;
+  const ord={bad:0,warn:1,ok:2,tip:3};
+  $("notes").innerHTML=notes.sort((x,y)=>ord[x[0]]-ord[y[0]]).map(([s,t])=>`<li><span class="pill ${s}">${{bad:"Achtung",warn:"Hinweis",ok:"OK",tip:"Tipp"}[s]}</span><span>${t}</span></li>`).join("");
+
+  // Rechenweg
+  const mg=m*G/10, sin=Math.sin(a*Math.PI/180);
+  $("calc").textContent=
+`Formel DIN EN 12195-1, Niederzurren gegen Rutschen:
+n ≥ m·g·(c − μ·cz)·fs / (2·μ·sin α·STF)
+
+m·g   = ${n0(m)} kg × 9,81 = ${nf(mg,0)} daN
+μ     = ${nf(mu)}    sin ${a}° = ${nf(sin,3)}    STF = ${n0(stf)} daN
+Nenner: 2 × ${nf(mu)} × ${nf(sin,3)} × ${n0(stf)} = ${nf(2*mu*sin*stf,1)} daN
+`+DIRS.map(d=>{const net=d.c-mu;return `
+${d.name.padEnd(12)} c = ${nf(d.c,1)}, fs = ${nf(d.fs)}
+  ${nf(mg,0)} × (${nf(d.c,1)} − ${nf(mu)}) × ${nf(d.fs)} = ${net>0?nf(mg*net*d.fs,1):"≤ 0"}
+  n = ${net>0?nf(res[d.k],2)+" → "+ceilN(res[d.k]):"0 (Reibung reicht)"}${d.k==="fwd"&&fwdBlocked?"  (Stirnwand)":""}`}).join("\n")+`
+
+Ergebnis: ${valid?need:"–"} Gurte (mindestens 2)`;
+  // Winkel-Grafik
+  const rad=a*Math.PI/180, x2=42+Math.min(46,42/Math.tan(Math.max(rad,0.35)));$("angLine").setAttribute("x2",a>=89?42.5:x2);$("angTxt").textContent=a+"°";
+}
+
+/* ===== Eingaben verdrahten ===== */
+function syncUI(){
+  $("mass").value=S.mass;$("pair").value=S.pair;$("muCustom").value=S.muCustom;$("customWrap").hidden=S.pair!=="custom";
+  $("muShow").textContent="μ "+nf(muVal());$("stfIn").value=S.stf;$("block").checked=S.block;$("blockBox").hidden=!S.block;
+  $("body").value=S.body;$("payload").value=S.payload;$("H").value=S.H;$("B").value=S.B;$("L").value=S.L;
+  const press=(sel,val)=>document.querySelectorAll(sel).forEach(b=>b.setAttribute("aria-pressed",String(String(b.dataset.v)===String(val))));
+  press("[data-for=mass] .chip",S.mass);press("#floor .chip",S.floor);press("#stf .chip",S.stf);press("#ang .chip",S.ang);
+}
+function upd(){save();syncUI();calc()}
+document.querySelectorAll("[data-for=mass] .chip").forEach(b=>b.onclick=()=>{S.mass=+b.dataset.v;upd()});
+document.querySelectorAll("#floor .chip").forEach(b=>b.onclick=()=>{S.floor=b.dataset.v;upd()});
+document.querySelectorAll("#stf .chip").forEach(b=>b.onclick=()=>{S.stf=+b.dataset.v;upd()});
+document.querySelectorAll("#ang .chip").forEach(b=>b.onclick=()=>{S.ang=+b.dataset.v;$("measOut").textContent="Beide Werte eintragen, dann wird der Winkel übernommen.";upd()});
+const onNum=(id,key)=>$(id).addEventListener("input",e=>{S[key]=e.target.value;save();$("muShow").textContent="μ "+nf(muVal());
+  document.querySelectorAll(key==="mass"?"[data-for=mass] .chip":key==="stf"?"#stf .chip":"#none").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===String(S[key]))));calc()});
+onNum("mass","mass");onNum("stfIn","stf");onNum("muCustom","muCustom");onNum("payload","payload");onNum("H","H");onNum("B","B");onNum("L","L");
+$("pair").onchange=e=>{S.pair=e.target.value;upd()};
+$("body").onchange=e=>{S.body=e.target.value;upd()};
+$("block").onchange=e=>{S.block=e.target.checked;upd()};
+function meas(){const h=+$("mh").value,a=+$("ma").value;if(h>0&&a>=0&&$("ma").value!==""){const deg=Math.round(Math.atan2(h,a)*180/Math.PI);S.ang=deg;
+  $("measOut").textContent=`Gemessen: ${deg}°. Wird für die Berechnung verwendet.`;save();syncUI();calc()}}
+$("mh").oninput=meas;$("ma").oninput=meas;
+$("reset").onclick=()=>{S={...DEF};$("mh").value="";$("ma").value="";upd();toast("Zurückgesetzt")};
+
+/* ===== Winkelmessung mit dem Neigungssensor ===== */
+const M={on:false,buf:[],val:null,raw:null,gamma:0,zero:0,timer:null,got:false};
+try{M.zero=+sessionStorage.getItem("nz-zero")||0}catch(e){}
+function tiltFrom(beta){let b=Math.abs(beta);if(b>90)b=180-b;return b}   // Neigung der Längsachse gegen die Waagerechte
+function onOri(e){if(e.beta==null)return;M.got=true;
+  const t=tiltFrom(e.beta);M.raw=t;M.gamma=e.gamma||0;
+  M.buf.push(t);if(M.buf.length>12)M.buf.shift();
+  const avg=M.buf.reduce((a,b)=>a+b,0)/M.buf.length;
+  const v=Math.max(0,Math.min(90,avg-M.zero));M.val=v;
+  const spread=Math.max(...M.buf)-Math.min(...M.buf);
+  $("measDeg").textContent=Math.round(v)+"°";
+  const r=v*Math.PI/180;   // Anzeige: 0° links, 90° oben
+  $("needle").setAttribute("x2",100-90*Math.cos(r));$("needle").setAttribute("y2",100-90*Math.sin(r));
+  const st=$("measSt");
+  if(Math.abs(M.gamma)>15&&Math.abs(e.beta)<165){st.className="st warn";st.textContent="Handy ist seitlich verkippt. Lange Seite genau in Gurtrichtung legen."}
+  else if(M.buf.length>=8&&spread<1.5){st.className="st ok";st.textContent="Stabil. Du kannst übernehmen."}
+  else{st.className="st";st.textContent="Ruhig halten …"}
+  $("measTake").disabled=!(M.buf.length>=6);
+}
+async function measStart(){
+  $("meas").hidden=false;M.buf=[];M.val=null;M.got=false;$("measDeg").textContent="–";$("measTake").disabled=true;
+  $("measSt").className="st";$("measSt").textContent="Warte auf den Neigungssensor …";
+  $("measCal").textContent=M.zero?`Ladefläche genullt: ${nf(M.zero,1)}° werden abgezogen.`:"";
+  if(!("DeviceOrientationEvent" in window)){measFail();return}
+  try{if(typeof DeviceOrientationEvent.requestPermission==="function"){const r=await DeviceOrientationEvent.requestPermission();if(r!=="granted"){measFail("Zugriff auf den Bewegungssensor wurde nicht erlaubt.");return}}}catch(e){measFail("Zugriff auf den Bewegungssensor wurde nicht erlaubt.");return}
+  window.addEventListener("deviceorientation",onOri);M.on=true;
+  clearTimeout(M.timer);M.timer=setTimeout(()=>{if(!M.got)measFail()},2000);
+}
+function measFail(msg){const st=$("measSt");st.className="st warn";st.textContent=msg||"Kein Neigungssensor gefunden. Am Handy in Chrome öffnen oder den Winkel schätzen.";}
+function measStop(){window.removeEventListener("deviceorientation",onOri);M.on=false;clearTimeout(M.timer);$("meas").hidden=true}
+$("measOpen").onclick=measStart;$("measClose").onclick=measStop;$("meas").onclick=e=>{if(e.target.id==="meas")measStop()};
+$("measTake").onclick=()=>{if(M.val==null)return;S.ang=Math.max(1,Math.round(M.val));measStop();
+  $("measOut").textContent=`Mit dem Handy gemessen: ${S.ang}°.`;upd();toast(`Winkel ${S.ang}° übernommen`);if(navigator.vibrate)try{navigator.vibrate(40)}catch(e){}};
+$("measZero").onclick=()=>{if(M.raw==null){toast("Erst Handy auf die Ladefläche legen");return}
+  const avg=M.buf.reduce((a,b)=>a+b,0)/M.buf.length;M.zero=avg>20?0:avg;
+  if(avg>20){toast("Handy liegt nicht flach auf der Ladefläche");return}
+  try{sessionStorage.setItem("nz-zero",String(M.zero))}catch(e){}
+  $("measCal").textContent=`Ladefläche genullt: ${nf(M.zero,1)}° werden abgezogen.`;M.buf=[];toast("Ladefläche genullt")};
+
+/* ===== Checkliste ===== */
+function clLoad(){let st={};try{st=JSON.parse(localStorage.getItem("niederzurren-cl")||"{}")}catch(e){}
+  document.querySelectorAll("[data-cl]").forEach(g=>g.querySelectorAll("input").forEach((c,i)=>{const k=g.dataset.cl+i;c.checked=!!st[k];
+    c.onchange=()=>{st[k]=c.checked;try{localStorage.setItem("niederzurren-cl",JSON.stringify(st))}catch(e){}}}))}
+$("clReset").onclick=()=>{try{localStorage.removeItem("niederzurren-cl")}catch(e){}clLoad();toast("Checkliste zurückgesetzt")};
+
+/* ===== Navigation, Blätter ===== */
+function setView(v){["calc","mu","check"].forEach(k=>$("v-"+k).hidden=k!==v);document.querySelectorAll("nav button").forEach(b=>b.setAttribute("aria-current",b.dataset.view===v?"page":"false"));scrollTo(0,0)}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
+const sheet=(btn,id,close)=>{$(btn).onclick=()=>{$(id).hidden=false;$(close).focus()};$(close).onclick=()=>$(id).hidden=true;$(id).onclick=e=>{if(e.target.id===id)$(id).hidden=true}};
+sheet("infoBtn","info","infoClose");sheet("helpBtn","help","helpClose");
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){$("info").hidden=true;$("help").hidden=true;if(M.on)measStop()}});
+$("copyMail").onclick=()=>{const m="David.Buenger@mail.de";(navigator.clipboard?navigator.clipboard.writeText(m):Promise.reject()).then(()=>toast("Adresse kopiert")).catch(()=>toast(m))};
+document.querySelectorAll(".year").forEach(s=>{const y=new Date().getFullYear();s.textContent=y>2026?"2026–"+y:"2026"});
+
+/* ===== Start ===== */
+syncUI();calc();clLoad();
+(function(){const s=$("splash");let done=false;const hide=()=>{if(done)return;done=true;s.classList.add("out");setTimeout(()=>s.remove(),500)};
+  s.addEventListener("click",hide);setTimeout(hide,matchMedia("(prefers-reduced-motion: reduce)").matches?1200:2200)})();
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+</script>
+</body>
+</html>
