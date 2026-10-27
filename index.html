@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Niederzurr-Rechner</title>
 <meta name="theme-color" content="#0b2a52">
-<meta name="description" content="Niederzurren nach DIN EN 12195-1: Anzahl der Zurrgurte schnell berechnen, mit Reibwerten, Hinweisen und Checkliste.">
+<meta name="description" content="Niederzurren nach VDI 2700 oder DIN EN 12195-1: Anzahl der Zurrgurte schnell berechnen, mit Reibwerten, Hinweisen und Checkliste.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -100,6 +100,17 @@ details.more[open] summary{margin-bottom:10px}
 .angle svg{width:92px;height:70px;flex:none}
 :focus-visible{outline:3px solid var(--orange);outline-offset:2px}
 
+/* Berechnungsgrundlage */
+.method{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.method .lbl{font:700 .7rem var(--body);text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.mswitch{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--soft);border-radius:10px;padding:4px}
+.mswitch button{border:0;background:none;color:var(--fg);font:700 .95rem var(--body);border-radius:8px;padding:9px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px}
+.mswitch button small{font:500 .72rem var(--body);color:var(--muted)}
+.mswitch button[aria-pressed="true"]{background:var(--brand);color:#fff;box-shadow:0 2px 6px rgba(11,42,82,.25)}
+.mswitch button[aria-pressed="true"] small{color:rgba(255,255,255,.8)}
+@media (prefers-color-scheme:dark){.mswitch button[aria-pressed="true"]{color:#0d1420}.mswitch button[aria-pressed="true"] small{color:#0d1420}}
+.prov{font-size:.8rem;color:var(--warn);font-weight:600}
+
 /* Reibwert-Auswahl */
 .qa{font-weight:700;font-size:.95rem;margin:2px 0 -4px}
 .pick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -185,6 +196,13 @@ nav button[aria-current="page"]{color:var(--accent);background:var(--soft);box-s
   <!-- RECHNER -->
   <section id="v-calc">
     <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="method">
+        <span class="lbl">Berechnungsgrundlage</span>
+        <div class="mswitch" id="method">
+          <button data-m="vdi">VDI 2700<small>Blatt 2 (2014)</small></button>
+          <button data-m="din">DIN EN 12195-1<small>2010 / 2021</small></button>
+        </div>
+      </div>
       <div class="result" id="result" aria-live="polite"></div>
       <ul class="notes" id="notes"></ul>
 
@@ -213,6 +231,8 @@ nav button[aria-current="page"]{color:var(--accent);background:var(--soft);box-s
         <label class="check"><input type="checkbox" id="foil"> Folie oder Karton zwischen Ladung und Boden</label>
         <label class="check"><input type="checkbox" id="arm"> Antirutschmatte unter der Ladung</label>
         <label class="field" id="armWrap" hidden>Reibwert der Matte laut Zertifikat (ohne Zertifikat 0,6)<input type="number" id="muArm" inputmode="decimal" min="0.1" max="1.2" step="0.05" value="0.6"></label>
+        <label class="check"><input type="checkbox" id="own"> Eigenen Reibwert eintragen (aus Tabelle oder Messung)</label>
+        <label class="field" id="ownWrap" hidden>Reibwert μ<input type="number" id="muOwn" inputmode="decimal" min="0.05" max="1.2" step="0.05" value="0.3"></label>
         <div class="musum"><span id="muSrc">Holzpalette auf Siebdruck</span><span class="mu" id="muShow">μ 0,45</span></div>
         <p class="qa">Zustand der Ladefläche</p>
         <div class="seg" id="floor">
@@ -228,6 +248,13 @@ nav button[aria-current="page"]{color:var(--accent);background:var(--soft);box-s
         <p class="small muted">STF steht auf dem blauen Etikett, z. B. „S<sub>TF</sub> 350 daN“. Nur mit normaler Handkraft spannen, keine Verlängerung.</p>
         <div class="chips" id="stf"><button class="chip" data-v="250">250</button><button class="chip" data-v="300">300</button><button class="chip" data-v="350">350</button><button class="chip" data-v="400">400</button><button class="chip" data-v="500">500</button><button class="chip" data-v="750">750</button></div>
         <label class="field">STF in daN<input type="number" id="stfIn" inputmode="numeric" min="50" step="10" value="350"></label>
+        <div id="kBox" style="display:flex;flex-direction:column;gap:8px">
+          <p class="qa">Wie wird gespannt? (Übertragungsbeiwert k)</p>
+          <div class="seg" id="kf">
+            <button class="chip" data-v="1.5">Eine Ratsche<br><small>k = 1,5</small></button>
+            <button class="chip" data-v="2">Zwei Ratschen oder Vorspannungsanzeige gegenüber<br><small>k = 2,0</small></button>
+          </div>
+        </div>
       </div>
 
       <div class="panel sec s4">
@@ -270,10 +297,14 @@ nav button[aria-current="page"]{color:var(--accent);background:var(--soft);box-s
     <div style="display:flex;flex-direction:column;gap:14px">
       <h1>Reibwerte</h1>
       <div class="panel">
-        <p class="small muted">Gleitreibbeiwerte μ nach DIN EN 12195-1, Anhang B. Sie gelten nur für saubere, trockene, besenreine Flächen ohne Eis, Schnee, Öl oder Fett.</p>
+        <div class="mswitch" id="method2">
+          <button data-m="vdi">VDI 2700<small>Gleitreibbeiwerte</small></button>
+          <button data-m="din">DIN EN 12195-1<small>Anhang B</small></button>
+        </div>
+        <p class="small muted" id="muIntro"></p>
         <div style="overflow-x:auto"><table id="muTable" style="font-size:.88rem"></table></div>
         <p class="small muted">Sieb­druck = Siebdruck, Sperrholz, Schichtholz · Alu = Aluminium geriffelt · Stahl = Stahlblech · Latten = Holzlatten als Zwischenlage</p>
-        <p class="small muted">„–“ heißt: Für diese Paarung gibt es in der Norm keinen Wert. Dann Antirutschmatte verwenden oder den Wert vom Hersteller nehmen. Folie oder Karton unter Holz: μ 0,30.</p>
+        <p class="small muted" id="muFoot"></p>
       </div>
       <div class="panel">
         <h2>Antirutschmatten richtig einsetzen</h2>
@@ -339,8 +370,8 @@ nav button[aria-current="page"]{color:var(--accent);background:var(--soft);box-s
   <div class="info-logo"><img src="logo-full.png" alt="David Bünger – Dozent für Verkehrs- und Fahrpersonalrecht" width="1000" height="583"></div>
   <p class="mail"><a href="mailto:David.Buenger@mail.de">David.Buenger@mail.de</a><button class="btn sm" id="copyMail">Kopieren</button></p>
   <h2 id="infoTitle">Niederzurr-Rechner</h2>
-  <p>Berechnung der Zurrgurte beim Niederzurren nach DIN EN 12195-1. Entwickelt von David Bünger, Dozent für Verkehrs- und Fahrpersonalrecht.</p>
-  <p class="small muted">Version 1.3. Hilfsmittel ohne Gewähr. Die Verantwortung für eine ausreichende Ladungssicherung bleibt bei Verlader, Fahrer und Halter. Kippen wird nur als Gefahr erkannt, nicht berechnet. Der Rechner gilt für standfeste Ladung auf ebener Ladefläche.</p>
+  <p>Berechnung der Zurrgurte beim Niederzurren wahlweise nach VDI 2700 Blatt 2 oder DIN EN 12195-1. Entwickelt von David Bünger, Dozent für Verkehrs- und Fahrpersonalrecht.</p>
+  <p class="small muted">Version 1.4. Hilfsmittel ohne Gewähr. Die Verantwortung für eine ausreichende Ladungssicherung bleibt bei Verlader, Fahrer und Halter. Kippen wird nur als Gefahr erkannt, nicht berechnet. Der Rechner gilt für standfeste Ladung auf ebener Ladefläche.</p>
   <p style="font-weight:600">© <span class="year">2026</span> David Bünger. Alle Rechte vorbehalten.</p>
   <div style="display:flex;justify-content:flex-end"><button class="btn primary" id="infoClose">Schließen</button></div>
 </div></div>
@@ -360,6 +391,11 @@ nav button[aria-current="page"]{color:var(--accent);background:var(--soft);box-s
     <li>Handy mit dem Rücken auf den Gurt legen, die lange Seite zeigt in Gurtrichtung, also von der Ladungskante zum Zurrpunkt.</li>
     <li>Ruhig halten, bis „stabil“ erscheint, dann „Winkel übernehmen“.</li></ol>
     <p>Steht das Fahrzeug schräg, vorher das Handy flach auf die Ladefläche legen und „Ladefläche nullen“ tippen. Am iPhone fragt Safari einmal nach Zugriff auf den Bewegungssensor.</p></details>
+  <details><summary>VDI 2700 oder DIN EN 12195-1?</summary>
+    <p>Oben wählst du die Berechnungsgrundlage. Beide sind anerkannt, sie rechnen nur etwas unterschiedlich:</p>
+    <ul><li><b>VDI 2700 Blatt 2:</b> Übertragungsbeiwert k = 1,5 bei einer Ratsche (k = 2,0 mit zwei Ratschen oder gemessener Vorspannung gegenüber), kein zusätzlicher Sicherheitsbeiwert, Gleitreibbeiwerte.</li>
+    <li><b>DIN EN 12195-1:</b> Faktor 2 für beide Gurtseiten, dafür Sicherheitsbeiwert 1,25 nach vorne und 1,1 zur Seite und nach hinten, Reibbeiwerte aus Anhang B.</li></ul>
+    <p>Die Ausgabe 2021-01 der DIN-Norm ist inhaltlich gleich mit der Fassung von 2010, gerechnet wird also identisch.</p></details>
   <details><summary>Was bedeutet „lückenlos an der Stirnwand“?</summary>
     <p>Steht die Ladung ohne Lücke an einer tragfähigen Stirnwand, übernimmt die Wand die Sicherung nach vorne. Dann zählen nur noch seitlich und hinten. Mit der Nutzlast prüft der Rechner, ob die Stirnwand die Kraft aufnehmen kann.</p></details>
   <details><summary>Warum steht da „Antirutschmatte“ als Tipp?</summary>
@@ -405,60 +441,83 @@ nav button[aria-current="page"]{color:var(--accent);background:var(--soft);box-s
 
 <script>
 "use strict";
-/* ===== Reibwerte nach DIN EN 12195-1, Anhang B, praxisnah zugeordnet =====
-   Spalten: Siebdruck/Holzboden, Aluminium geriffelt, Stahlblech, Holzlatten */
+/* ===== Reibwerte, praxisnah zugeordnet =====
+   Spalten: Siebdruck/Holzboden, Aluminium geriffelt, Stahlblech, Holzlatten
+   din: DIN EN 12195-1:2010 (= Ausgabe 2021-01), Anhang B
+   vdi: Gleitreibbeiwerte nach deutscher Praxis zur VDI 2700 – VORLÄUFIG, bitte mit Originaltabelle abgleichen
+        a = EN 12195-1:2004 (Gleitreibbeiwerte μD), b = DEKRA-Messwert, c = VDI-Richtwert Metall/Holz, d = Fraunhofer IML (neues Holz) */
 const FLOORS=[["ply","Siebdruck / Holz","Sperrholz, Schichtholz"],["alu","Aluminium","geriffelt"],["steel","Stahlboden","Stahlblech"],["latte","Holzlatten","Kanthölzer als Zwischenlage"]];
 const LOADS=[
- ["euro","Holzpalette","Euro- und Einwegpalette, Holzkufen",[0.45,0.40,0.30,null],"Schnittholz"],
- ["plastic","Kunststoffpalette","auch Kunststoffkufen",[0.20,0.15,0.15,null],"Kunststoffpalette"],
- ["metal","Gitterbox / Metall","Stahlkiste, Gestell, Metallkufen",[0.45,0.30,0.20,null],"Stahlkiste"],
- ["planed","Glattes Holz","gehobelte oder lackierte Holzkiste",[0.30,0.25,0.20,null],"gehobeltes Holz"],
- ["concR","Beton rau","Betonteile, Steine",[null,null,null,0.70],"Beton rau"],
- ["concS","Beton glatt","Fertigteile, glatt",[null,null,null,0.55],"Beton glatt"]
+ ["euro","Holzpalette","Euro- und Einwegpalette, Holzkufen",{din:[0.45,0.40,0.30,null],vdi:[0.30,0.30,0.20,null]},{vdi:["b","a","c",""]}],
+ ["plastic","Kunststoffpalette","auch Kunststoffkufen",{din:[0.20,0.15,0.15,null],vdi:[0.25,null,null,null]},{vdi:["a","","",""]}],
+ ["metal","Gitterbox / Metall","Stahlkiste, Gestell, Metallkufen",{din:[0.45,0.30,0.20,null],vdi:[0.25,null,null,null]},{vdi:["a","","",""]}],
+ ["planed","Glattes Holz","gehobelte oder lackierte Holzkiste",{din:[0.30,0.25,0.20,null],vdi:[null,null,null,null]},{vdi:["","","",""]}],
+ ["concR","Beton rau","Betonteile, Steine",{din:[null,null,null,0.70],vdi:[null,null,null,0.40]},{vdi:["","","","d"]}],
+ ["concS","Beton glatt","Fertigteile, glatt",{din:[null,null,null,0.55],vdi:[null,null,null,0.40]},{vdi:["","","","d"]}]
 ];
-const FOIL=0.30;
+const FOIL={din:0.30,vdi:0.20};
+const SRC={a:"EN 12195-1:2004, Gleitreibbeiwert",b:"DEKRA-Messwert Holzpalette auf Siebdruck",c:"Richtwert Metall auf Holz",d:"Fraunhofer IML, Betonelement auf neuem Holz"};
 const LMAP=Object.fromEntries(LOADS.map(l=>[l[0],l])), FIDX=Object.fromEntries(FLOORS.map((f,i)=>[f[0],i]));
+const METHOD={
+  vdi:{name:"VDI 2700 Blatt 2",long:"VDI 2700 Blatt 2 (2014)"},
+  din:{name:"DIN EN 12195-1",long:"DIN EN 12195-1 (2010, inhaltsgleich Ausgabe 2021-01)"}
+};
 
-/* ===== Norm-Konstanten DIN EN 12195-1 (Straße) ===== */
+/* ===== Beschleunigungsbeiwerte Straße (beide Verfahren gleich) ===== */
 const DIRS=[{k:"fwd",name:"nach vorne",c:0.8,fs:1.25},{k:"side",name:"seitlich",c:0.5,fs:1.1},{k:"rear",name:"nach hinten",c:0.5,fs:1.1}];
-const G=9.81, CZ=1.0;
+const G=9.81;
 
-/* Benötigte Anzahl Niederzurrungen gegen Rutschen:
-   n ≥ m·g·(c − μ·cz)·fs / (2·μ·sin α·FT)   (m in kg, FT in daN → ×10 N) */
-function nNeeded(m,mu,alpha,stf,c,fs){const net=c-mu*CZ;if(net<=0||m<=0)return 0;return (m*G*net*fs)/(2*mu*Math.sin(alpha*Math.PI/180)*stf*10)}
+/* Benötigte Anzahl Niederzurrungen gegen Rutschen (m in kg, STF in daN → ×10 N):
+   DIN EN 12195-1:  n ≥ m·g·(c − μ)·fs / (2·μ·sin α·STF)
+   VDI 2700 Bl. 2:  n ≥ m·g·(c − μ)    / (k·μ·sin α·STF)   */
+function nNeeded(m,mu,alpha,stf,d){const net=d.c-mu;if(net<=0||m<=0)return 0;const sin=Math.sin(alpha*Math.PI/180);
+  return S.method==="din"?(m*G*net*d.fs)/(2*mu*sin*stf*10):(m*G*net)/((+S.kf||1.5)*mu*sin*stf*10)}
 
 /* ===== Zustand ===== */
-const DEF={mass:1000,load:"euro",floorMat:"ply",foil:false,arm:false,muArm:0.6,floor:"clean",stf:350,ang:90,block:false,body:"L",payload:"",H:"",B:"",L:""};
+const DEF={method:"vdi",kf:1.5,own:false,muOwn:0.3,mass:1000,load:"euro",floorMat:"ply",foil:false,arm:false,muArm:0.6,floor:"clean",stf:350,ang:90,block:false,body:"L",payload:"",H:"",B:"",L:""};
 let S={...DEF};
-try{const s=JSON.parse(localStorage.getItem("niederzurren-v2")||"null");if(s)S={...DEF,...s}}catch(e){}
-const save=()=>{try{localStorage.setItem("niederzurren-v2",JSON.stringify(S))}catch(e){}};
+try{const s=JSON.parse(localStorage.getItem("niederzurren-v3")||"null");if(s)S={...DEF,...s}}catch(e){}
+const save=()=>{try{localStorage.setItem("niederzurren-v3",JSON.stringify(S))}catch(e){}};
 const $=id=>document.getElementById(id);
 const nf=(x,d=2)=>x.toLocaleString("de-DE",{minimumFractionDigits:d,maximumFractionDigits:d});
 const n0=x=>Math.round(x).toLocaleString("de-DE");
 function toast(m){const t=$("toast");t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2000)}
 
 /* ===== Reibwert bestimmen ===== */
-function tableMu(load,floor){return LMAP[load][3][FIDX[floor]]}
+const word=()=>S.method==="din"?"Normwert":"Tabellenwert";
+function tableMu(load,floor,meth){return LMAP[load][3][meth||S.method][FIDX[floor]]}
 function muInfo(){
+  if(S.own){const v=+S.muOwn||0;return{mu:v,src:"Eigener Reibwert",ok:v>0}}
   if(S.arm){const v=+S.muArm||0;return{mu:v,src:`Antirutschmatte${v!==0.6?" laut Zertifikat":""}`,ok:v>0}}
   const base=tableMu(S.load,S.floorMat);const L=LMAP[S.load],F=FLOORS[FIDX[S.floorMat]];
-  if(base==null)return{mu:0,src:`${L[1]} auf ${F[1]}: kein Normwert`,ok:false};
-  if(S.foil&&base>FOIL)return{mu:FOIL,src:`${L[1]} auf Folie oder Karton`,ok:true};
+  if(base==null)return{mu:0,src:`${L[1]} auf ${F[1]}: kein ${word()}`,ok:false};
+  const foil=FOIL[S.method];
+  if(S.foil&&base>foil)return{mu:foil,src:`${L[1]} auf Folie oder Karton`,ok:true};
   return{mu:base,src:`${L[1]} auf ${F[1]}`,ok:true};
 }
 function muVal(){return muInfo().mu}
 function renderPick(){
   $("loadPick").innerHTML=LOADS.map(([id,name,sub])=>`<button data-load="${id}" aria-pressed="${S.load===id}">${name}<small>${sub}</small></button>`).join("");
-  $("floorPick").innerHTML=FLOORS.map(([id,name,sub],i)=>{const v=LMAP[S.load][3][i];
-    return `<button data-floor="${id}" aria-pressed="${S.floorMat===id}" class="${v==null?"na":""}">${name}<small>${sub}</small><span class="mv">${v==null?"kein Normwert":"μ "+nf(v)}</span></button>`}).join("");
-  document.querySelectorAll("[data-load]").forEach(b=>b.onclick=()=>{S.load=b.dataset.load;
-    if(tableMu(S.load,S.floorMat)==null){const i=LMAP[S.load][3].findIndex(v=>v!=null);S.floorMat=FLOORS[i][0]}upd()});
+  $("floorPick").innerHTML=FLOORS.map(([id,name,sub],i)=>{const v=LMAP[S.load][3][S.method][i];
+    return `<button data-floor="${id}" aria-pressed="${S.floorMat===id}" class="${v==null?"na":""}">${name}<small>${sub}</small><span class="mv">${v==null?"kein "+word():"μ "+nf(v)}</span></button>`}).join("");
+  document.querySelectorAll("[data-load]").forEach(b=>b.onclick=()=>{S.load=b.dataset.load;fixFloor();upd()});
   document.querySelectorAll("[data-floor]").forEach(b=>b.onclick=()=>{S.floorMat=b.dataset.floor;upd()});
 }
-const SHORT=["Sieb­druck","Alu","Stahl","Latten"];
-$("muTable").innerHTML=`<thead><tr><th>Ladung</th>${SHORT.map(f=>`<th style="text-align:right;padding:6px 4px">${f}</th>`).join("")}</tr></thead><tbody>`+
-  LOADS.map(l=>`<tr><td style="padding:8px 4px"><b>${l[1]}</b></td>${l[3].map(v=>`<td class="n" style="padding:8px 4px;font-size:.85rem">${v==null?"–":nf(v)}</td>`).join("")}</tr>`).join("")+
-  `<tr><td style="padding:8px 4px"><b>Antirutsch­matte</b><br><small class="muted">ohne Zertifikat</small></td><td class="n" colspan="4" style="text-align:center;font-size:.85rem">0,60 auf jedem Boden</td></tr></tbody>`;
+function fixFloor(){if(tableMu(S.load,S.floorMat)==null){const i=LMAP[S.load][3][S.method].findIndex(v=>v!=null);if(i>=0)S.floorMat=FLOORS[i][0]}}
+function renderMuTable(){
+  const SHORT=["Sieb­druck","Alu","Stahl","Latten"],M=S.method;
+  $("muTable").innerHTML=`<thead><tr><th>Ladung</th>${SHORT.map(f=>`<th style="text-align:right;padding:6px 4px">${f}</th>`).join("")}</tr></thead><tbody>`+
+    LOADS.map(l=>`<tr><td style="padding:8px 4px"><b>${l[1]}</b></td>${l[3][M].map((v,i)=>{const s=M==="vdi"?l[4].vdi[i]:"";
+      return `<td class="n" style="padding:8px 4px;font-size:.85rem">${v==null?"–":nf(v)}${s?`<sup style="color:var(--muted);font-weight:500">${s}</sup>`:""}</td>`}).join("")}</tr>`).join("")+
+    `<tr><td style="padding:8px 4px"><b>Folie / Karton</b><br><small class="muted">unter Holzpalette</small></td><td class="n" colspan="4" style="text-align:center;font-size:.85rem">${nf(FOIL[M])}${M==="vdi"?"<sup>a</sup>":""}</td></tr>`+
+    `<tr><td style="padding:8px 4px"><b>Antirutsch­matte</b><br><small class="muted">ohne Zertifikat</small></td><td class="n" colspan="4" style="text-align:center;font-size:.85rem">0,60 auf jedem Boden</td></tr></tbody>`;
+  $("muIntro").innerHTML=M==="din"
+    ?"Reibbeiwerte μ nach DIN EN 12195-1, Anhang B (normativ). Gelten nur für saubere, trockene, besenreine Flächen ohne Eis, Schnee, Öl oder Fett."
+    :"Gleitreibbeiwerte μ<sub>D</sub> für die Berechnung nach VDI 2700, wie sie in der deutschen Praxis verwendet werden. Gelten nur für saubere, trockene, besenreine Flächen. <span class=\"prov\">Vorläufige Werte – vor dem Einsatz mit der Originaltabelle abgleichen.</span>";
+  $("muFoot").innerHTML=(M==="vdi"?"Quellen: "+Object.entries(SRC).map(([k,v])=>`<sup>${k}</sup> ${v}`).join(" · ")+".<br>":"")+
+    `„–“ heißt: Für diese Paarung ist kein ${word()} hinterlegt. Dann Antirutschmatte verwenden oder einen eigenen Wert aus Herstellertabelle oder Messung eintragen.`;
+  document.querySelectorAll("#method2 button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.m===M)));
+}
 
 /* ===== Berechnung und Anzeige ===== */
 function calc(){
@@ -466,7 +525,7 @@ function calc(){
   const m=+S.mass||0, mu=(S.floor==="wet"||S.floor==="dirty")?Math.min(muT,0.2):muT, a=+S.ang||90, stf=+S.stf||0;
   const notes=[];const N=(sev,t)=>notes.push([sev,t]);
   const valid=m>0&&mu>0&&stf>0&&a>0&&a<=90;
-  const res={};DIRS.forEach(d=>res[d.k]=valid?nNeeded(m,mu,a,stf,d.c,d.fs):0);
+  const res={};DIRS.forEach(d=>res[d.k]=valid?nNeeded(m,mu,a,stf,d):0);
 
   // Stirnwand
   let fwdBlocked=false, wallInfo="";
@@ -486,7 +545,9 @@ function calc(){
   if(valid)need=Math.max(need,2);
 
   const MI=muInfo();
-  if(!MI.ok)N("bad",`${MI.src}. Antirutschmatte unterlegen oder Zwischenlage wählen, für die es einen Wert gibt.`);
+  if(!MI.ok)N("bad",`${MI.src}. Antirutschmatte unterlegen, eine andere Zwischenlage wählen oder einen eigenen Reibwert eintragen.`);
+  if(S.method==="vdi"&&!S.own&&!S.arm&&MI.ok)N("warn","VDI-Reibwerte sind vorläufig hinterlegt. Vor dem Einsatz mit der Originaltabelle abgleichen.");
+  if(S.method==="vdi"&&+S.kf===2)N("tip","k = 2,0 gilt nur mit Ratschen auf beiden Seiten oder wenn die Vorspannung auf der Gegenseite gemessen wird. Sonst k = 1,5 wählen.");
   if(S.foil&&!S.arm)N("warn","Folie oder Karton unter der Ladung senkt die Reibung. Wenn möglich entfernen oder Antirutschmatte verwenden.");
   // Ladefläche
   if(S.floor==="ice")N("bad","Eis, Schnee, Öl oder Fett: Die Reibwerte gelten nicht. So nicht losfahren. Ladefläche reinigen, dann neu rechnen.");
@@ -505,11 +566,11 @@ function calc(){
   if(H&&L&&H/L>1/0.8&&!fwdBlocked)N("bad",`Kippgefahr nach vorne: Höhe zu Länge ${nf(H/L,1)}. Ladung nach vorne formschlüssig sichern.`);
   if(valid&&mu>=0.5&&mu<0.8)N("tip","Nach vorne trägt die Reibung schon viel. Steht die Ladung an der Stirnwand, reichen oft wenige Gurte.");
   // Kantenschutz / Nachspannen
-  N("tip","Kantenschutz verwenden: Er schützt den Gurt und sorgt dafür, dass die Vorspannung auch auf der Gegenseite ankommt. Davon geht die Norm aus.");
+  N("tip","Kantenschutz verwenden: Er schützt den Gurt und sorgt dafür, dass die Vorspannung auch auf der Gegenseite ankommt. Davon gehen beide Berechnungsverfahren aus.");
 
   // Alternative mit Antirutschmatte
   let alt="";
-  if(valid&&mu<0.6&&!S.arm){const r=DIRS.map(d=>(d.k==="fwd"&&fwdBlocked)?0:ceilN(nNeeded(m,0.6,a,stf,d.c,d.fs)));alt=Math.max(2,...r)}
+  if(valid&&mu<0.6&&!S.arm&&!S.own){const r=DIRS.map(d=>(d.k==="fwd"&&fwdBlocked)?0:ceilN(nNeeded(m,0.6,a,stf,d)));alt=Math.max(2,...r)}
 
   // Ergebnis
   const invalid=S.floor==="ice";
@@ -518,7 +579,7 @@ function calc(){
   const stCls=invalid||!valid?"bad":(S.floor==="wet"||S.floor==="dirty")?"warn":"ok";
   const stTxt=invalid?"Ungültig – erst Ladefläche reinigen":!valid?"Eingaben unvollständig":S.floor==="wet"?"Nass: mit μ höchstens 0,20":S.floor==="dirty"?"Verschmutzt: mit μ höchstens 0,20":"Gültig – Ladefläche besenrein";
   rEl.innerHTML=`<span class="badge">Ergebnis</span><div class="top"><div style="display:flex;gap:14px;align-items:center"><div class="ring"><div class="big">${valid?need:"–"}</div></div><div><div class="k">Benötigte Zurrgurte</div><div style="font:700 1.15rem/1.2 var(--body)">${need===1?"Gurt":"Gurte"} je Ladeeinheit</div><span class="status ${stCls}">${stCls==="ok"?"✓":"!"} ${stTxt}</span></div></div></div>
-    <div class="k" style="text-transform:none;letter-spacing:.04em">Gerechnet mit STF ${n0(stf)} daN · ${a}° · μ ${nf(mu)}</div>
+    <div class="k" style="text-transform:none;letter-spacing:.04em">Nach ${METHOD[S.method].name}${S.method==="vdi"?" · k "+nf(+S.kf,1):""} · STF ${n0(stf)} daN · ${a}° · μ ${nf(mu)}</div>
     <div class="dirs">${dirCell("fwd",nf_,res.fwd,fwdBlocked)}${dirCell("side",ns,res.side,false)}${dirCell("rear",nr,res.rear,false)}</div>
     ${alt&&alt<need?`<div class="alt">Mit Antirutschmatte (μ 0,60): <b>${alt} Gurte</b>, also ${need-alt} weniger.</div>`:""}`;
   const ord={bad:0,warn:1,ok:2,tip:3};
@@ -526,16 +587,18 @@ function calc(){
 
   // Rechenweg
   const mg=m*G/10, sin=Math.sin(a*Math.PI/180);
+  const din=S.method==="din", kf=+S.kf||1.5, den=(din?2:kf)*mu*sin*stf;
   $("calc").textContent=
-`Formel DIN EN 12195-1, Niederzurren gegen Rutschen:
-n ≥ m·g·(c − μ·cz)·fs / (2·μ·sin α·STF)
+(din?`Formel DIN EN 12195-1, Niederzurren gegen Rutschen:
+n ≥ m·g·(c − μ)·fs / (2·μ·sin α·STF)`:`Formel VDI 2700 Blatt 2, Niederzurren gegen Rutschen:
+n ≥ m·g·(c − μ) / (k·μ·sin α·STF)`)+`
 
 m·g   = ${n0(m)} kg × 9,81 = ${nf(mg,0)} daN
 μ     = ${nf(mu)}    sin ${a}° = ${nf(sin,3)}    STF = ${n0(stf)} daN
-Nenner: 2 × ${nf(mu)} × ${nf(sin,3)} × ${n0(stf)} = ${nf(2*mu*sin*stf,1)} daN
-`+DIRS.map(d=>{const net=d.c-mu;return `
-${d.name.padEnd(12)} c = ${nf(d.c,1)}, fs = ${nf(d.fs)}
-  ${nf(mg,0)} × (${nf(d.c,1)} − ${nf(mu)}) × ${nf(d.fs)} = ${net>0?nf(mg*net*d.fs,1):"≤ 0"}
+Nenner: ${din?"2":nf(kf,1)} × ${nf(mu)} × ${nf(sin,3)} × ${n0(stf)} = ${nf(den,1)} daN
+`+DIRS.map(d=>{const net=d.c-mu,z=din?mg*net*d.fs:mg*net;return `
+${d.name.padEnd(12)} c = ${nf(d.c,1)}${din?", fs = "+nf(d.fs):""}
+  ${nf(mg,0)} × (${nf(d.c,1)} − ${nf(mu)})${din?" × "+nf(d.fs):""} = ${net>0?nf(z,1):"≤ 0"}
   n = ${net>0?nf(res[d.k],2)+" → "+ceilN(res[d.k]):"0 (Reibung reicht)"}${d.k==="fwd"&&fwdBlocked?"  (Stirnwand)":""}`}).join("\n")+`
 
 Ergebnis: ${valid?need:"–"} Gurte (mindestens 2)`;
@@ -545,11 +608,12 @@ Ergebnis: ${valid?need:"–"} Gurte (mindestens 2)`;
 
 /* ===== Eingaben verdrahten ===== */
 function syncUI(){
-  $("mass").value=S.mass;$("foil").checked=S.foil;$("arm").checked=S.arm;$("muArm").value=S.muArm;$("armWrap").hidden=!S.arm;$("foil").disabled=S.arm;renderPick();$("muSrc").textContent=muInfo().src;
+  $("mass").value=S.mass;$("own").checked=S.own;$("muOwn").value=S.muOwn;$("ownWrap").hidden=!S.own;$("arm").disabled=S.own;$("foil").checked=S.foil;$("arm").checked=S.arm;$("muArm").value=S.muArm;$("armWrap").hidden=!S.arm;$("foil").disabled=S.arm||S.own;renderPick();renderMuTable();$("kBox").hidden=S.method!=="vdi";
+  document.querySelectorAll("#method button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.m===S.method)));$("muSrc").textContent=muInfo().src;
   $("muShow").textContent="μ "+nf(muVal())+((S.floor==="wet"||S.floor==="dirty")&&muVal()>0.2?" → 0,20":"");$("stfIn").value=S.stf;$("block").checked=S.block;$("blockBox").hidden=!S.block;
   $("body").value=S.body;$("payload").value=S.payload;$("H").value=S.H;$("B").value=S.B;$("L").value=S.L;
   const press=(sel,val)=>document.querySelectorAll(sel).forEach(b=>b.setAttribute("aria-pressed",String(String(b.dataset.v)===String(val))));
-  press("[data-for=mass] .chip",S.mass);press("#floor .chip",S.floor);press("#stf .chip",S.stf);press("#ang .chip",S.ang);
+  press("[data-for=mass] .chip",S.mass);press("#kf .chip",S.kf);press("#floor .chip",S.floor);press("#stf .chip",S.stf);press("#ang .chip",S.ang);
 }
 function upd(){save();syncUI();calc()}
 document.querySelectorAll("[data-for=mass] .chip").forEach(b=>b.onclick=()=>{S.mass=+b.dataset.v;upd()});
@@ -558,8 +622,10 @@ document.querySelectorAll("#stf .chip").forEach(b=>b.onclick=()=>{S.stf=+b.datas
 document.querySelectorAll("#ang .chip").forEach(b=>b.onclick=()=>{S.ang=+b.dataset.v;$("measOut").textContent="Beide Werte eintragen, dann wird der Winkel übernommen.";upd()});
 const onNum=(id,key)=>$(id).addEventListener("input",e=>{S[key]=e.target.value;save();$("muShow").textContent="μ "+nf(muVal());$("muSrc").textContent=muInfo().src;
   document.querySelectorAll(key==="mass"?"[data-for=mass] .chip":key==="stf"?"#stf .chip":"#none").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===String(S[key]))));calc()});
-onNum("mass","mass");onNum("stfIn","stf");onNum("muArm","muArm");onNum("payload","payload");onNum("H","H");onNum("B","B");onNum("L","L");
-$("foil").onchange=e=>{S.foil=e.target.checked;upd()};$("arm").onchange=e=>{S.arm=e.target.checked;upd()};
+onNum("mass","mass");onNum("stfIn","stf");onNum("muArm","muArm");onNum("muOwn","muOwn");onNum("payload","payload");onNum("H","H");onNum("B","B");onNum("L","L");
+$("foil").onchange=e=>{S.foil=e.target.checked;upd()};$("own").onchange=e=>{S.own=e.target.checked;upd()};
+document.querySelectorAll("#method button,#method2 button").forEach(b=>b.onclick=()=>{S.method=b.dataset.m;fixFloor();upd();toast("Berechnung nach "+METHOD[S.method].name)});
+document.querySelectorAll("#kf .chip").forEach(b=>b.onclick=()=>{S.kf=+b.dataset.v;upd()});$("arm").onchange=e=>{S.arm=e.target.checked;upd()};
 $("body").onchange=e=>{S.body=e.target.value;upd()};
 $("block").onchange=e=>{S.block=e.target.checked;upd()};
 function meas(){const h=+$("mh").value,a=+$("ma").value;if(h>0&&a>=0&&$("ma").value!==""){const deg=Math.round(Math.atan2(h,a)*180/Math.PI);S.ang=deg;

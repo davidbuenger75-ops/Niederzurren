@@ -1,7 +1,7 @@
 {
   "name": "Niederzurr-Rechner",
   "short_name": "Niederzurren",
-  "description": "Niederzurren nach DIN EN 12195-1: Anzahl der Zurrgurte schnell berechnen.",
+  "description": "Niederzurren nach VDI 2700 oder DIN EN 12195-1: Anzahl der Zurrgurte schnell berechnen.",
   "lang": "de",
   "start_url": "./",
   "scope": "./",
