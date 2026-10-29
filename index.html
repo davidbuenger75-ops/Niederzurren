@@ -371,7 +371,7 @@ nav button[aria-current="page"]{color:var(--accent);background:var(--soft);box-s
   <p class="mail"><a href="mailto:David.Buenger@mail.de">David.Buenger@mail.de</a><button class="btn sm" id="copyMail">Kopieren</button></p>
   <h2 id="infoTitle">Niederzurr-Rechner</h2>
   <p>Berechnung der Zurrgurte beim Niederzurren wahlweise nach VDI 2700 Blatt 2 oder DIN EN 12195-1. Entwickelt von David Bünger, Dozent für Verkehrs- und Fahrpersonalrecht.</p>
-  <p class="small muted">Version 1.4. Hilfsmittel ohne Gewähr. Die Verantwortung für eine ausreichende Ladungssicherung bleibt bei Verlader, Fahrer und Halter. Kippen wird nur als Gefahr erkannt, nicht berechnet. Der Rechner gilt für standfeste Ladung auf ebener Ladefläche.</p>
+  <p class="small muted">Version 1.5. Hilfsmittel ohne Gewähr. Die Verantwortung für eine ausreichende Ladungssicherung bleibt bei Verlader, Fahrer und Halter. Kippen wird nur als Gefahr erkannt, nicht berechnet. Der Rechner gilt für standfeste Ladung auf ebener Ladefläche.</p>
   <p style="font-weight:600">© <span class="year">2026</span> David Bünger. Alle Rechte vorbehalten.</p>
   <div style="display:flex;justify-content:flex-end"><button class="btn primary" id="infoClose">Schließen</button></div>
 </div></div>
@@ -692,7 +692,8 @@ syncUI();calc();clLoad();
 (function(){const s=$("splash");let done=false;const hide=()=>{if(done)return;done=true;s.classList.add("out");setTimeout(()=>s.remove(),500)};
   s.addEventListener("click",hide);setTimeout(hide,matchMedia("(prefers-reduced-motion: reduce)").matches?1200:2200)})();
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+const NATIVE=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());
+if(!NATIVE&&"serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 </script>
 </body>
 </html>
